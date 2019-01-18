@@ -1,0 +1,10 @@
+<schemalist gettext-domain="gnome-shell-extensions">
+  <schema id="org.gnome.shell.extensions.arrangeWindows" path="/org/gnome/shell/extensions/arrangeWindows/">
+    <key name="all-monitors" type="b">
+      <default>false</default>
+      <summary>Windows on all monitors</summary>
+      <description>
+      </description>
+    </key>
+  </schema>
+</schemalist>
