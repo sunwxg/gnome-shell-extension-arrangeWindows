@@ -154,12 +154,53 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 
     maximizeWindow(direction) {
+        if (this._allMonitor == true) {
+            this.maximizeWindowAllMonitor(direction);
+            return;
+        }
+
         let windows = this.getWindows();
 
         for (let i = 0; i < windows.length; i++) {
             let actor = windows[i];
             let win = actor.get_meta_window();
             win.maximize(direction);
+        }
+    }
+
+    maximizeWindowAllMonitor(direction) {
+        let windows = this.getWindows();
+        if (windows.length == 0)
+            return;
+
+        let workArea = this.getWorkArea(windows[0]);
+
+        for (let i = 0; i < windows.length; i++) {
+            let win = windows[i].get_meta_window();
+
+            switch (direction) {
+                case Meta.MaximizeFlags.BOTH:
+                    win.move_resize_frame(true,
+                                          workArea.x,
+                                          workArea.y,
+                                          workArea.width,
+                                          workArea.height);
+                    break;
+                case Meta.MaximizeFlags.VERTICAL:
+                    win.move_resize_frame(true,
+                                          win.get_frame_rect().x,
+                                          workArea.y,
+                                          win.get_frame_rect().width,
+                                          workArea.height);
+                    break;
+                case Meta.MaximizeFlags.HORIZONTAL:
+                    win.move_resize_frame(true,
+                                          workArea.x,
+                                          win.get_frame_rect().y,
+                                          workArea.width,
+                                          win.get_frame_rect().height);
+                    break;
+            }
         }
     }
 
@@ -212,6 +253,7 @@ function init(metadata) {
 }
 
 function enable() {
+    print("wxg: enable");
     arrange = new ArrangeMenu;
     Main.panel.addToStatusArea('arrange-menu', arrange);
 }
