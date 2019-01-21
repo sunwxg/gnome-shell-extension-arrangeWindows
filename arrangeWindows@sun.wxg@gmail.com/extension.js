@@ -35,7 +35,7 @@ class ArrangeMenu extends PanelMenu.Button {
 
         this._allMonitor = this._gsettings.get_boolean(ALL_MONITOR);
 
-        let icon = new St.Icon({ icon_name: 'arrange-windows',
+        let icon = new St.Icon({ icon_name: 'arrange-windows-symbolic',
                                  style_class: 'system-status-icon' });
         this.actor.add_child(icon);
 
