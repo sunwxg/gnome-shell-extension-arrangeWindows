@@ -22,6 +22,7 @@ const Convenience = Me.imports.convenience;
 
 const CASCADE_WIDTH = 30;
 const CASCADE_HEIGHT = 30;
+const MIN_WINDOW_WIDTH = 500;
 
 const ARRANGEWINDOWS_SCHEMA = 'org.gnome.shell.extensions.arrangeWindows';
 const ALL_MONITOR = 'all-monitors';
@@ -41,6 +42,10 @@ class ArrangeMenu extends PanelMenu.Button {
         this.menu.addAction(_("Cascade"),
                             () => this.cascadeWindow(),
                             "cascade-windows-symbolic");
+
+        this.menu.addAction(_("Tile"),
+                            () => this.tileWindow(),
+                            "tile-windows-symbolic");
 
         this.menu.addAction(_("Side by side"),
                             () => this.sideBySideWindow(),
@@ -77,12 +82,10 @@ class ArrangeMenu extends PanelMenu.Button {
 
     cascadeWindow() {
         let windows = this.getWindows();
-
-        let workArea;
-        if (windows.length > 0)
-            workArea = this.getWorkArea(windows[0]);
-        else
+        if (windows.length == 0)
             return;
+
+        let workArea = this.getWorkArea(windows[0]);
 
         let y = workArea.y + 5;
         let x = workArea.x + 10;
@@ -99,15 +102,11 @@ class ArrangeMenu extends PanelMenu.Button {
 
     sideBySideWindow() {
         let windows = this.getWindows();
-
-        let workArea;
-        let width;
-        if (windows.length > 0) {
-            workArea = this.getWorkArea(windows[0]);
-            width = Math.round(workArea.width / windows.length)
-        } else {
+        if (windows.length == 0)
             return;
-        }
+
+        let workArea = this.getWorkArea(windows[0]);
+        let width = Math.round(workArea.width / windows.length)
 
         let y = workArea.y;
         let x = workArea.x;
@@ -127,15 +126,11 @@ class ArrangeMenu extends PanelMenu.Button {
 
     stackWindow() {
         let windows = this.getWindows();
-
-        let workArea;
-        let height;
-        if (windows.length > 0) {
-            workArea = this.getWorkArea(windows[0]);
-            height = Math.round(workArea.height / windows.length)
-        } else {
+        if (windows.length == 0)
             return;
-        }
+
+        let workArea = this.getWorkArea(windows[0]);
+        let height = Math.round(workArea.height / windows.length)
 
         let y = workArea.y;
         let x = workArea.x;
@@ -151,6 +146,42 @@ class ArrangeMenu extends PanelMenu.Button {
         last_win.move_resize_frame(false, x, y,
                                    workArea.width,
                                    workArea.y + workArea.height - y);
+    }
+
+    tileWindow() {
+        let windows = this.getWindows();
+        if (windows.length == 0)
+            return;
+
+        let workArea = this.getWorkArea(windows[0]);
+
+        let columnMaxNumber = 1;
+        while ((workArea.width / columnMaxNumber) > MIN_WINDOW_WIDTH) {
+            columnMaxNumber++;
+        }
+
+        let columnNumber = (windows.length < columnMaxNumber) ? windows.length : columnMaxNumber;
+        let rowNumber = Math.floor(windows.length / columnNumber) + ((windows.length % columnNumber) > 0 ? 1 : 0);
+        let width = Math.round(workArea.width / columnNumber)
+        let height = Math.round(workArea.height/ rowNumber)
+        let x = workArea.x;
+        let y = workArea.y;
+
+        for (let i = 0; i < windows.length; i++) {
+            let row = Math.floor(i / columnNumber);
+            let column = i % columnNumber;
+            if (i == 0) {
+                x = workArea.x + width * column;
+                y = workArea.y + height * row;
+            } else {
+                x = workArea.x + (windows[i - 1].meta_window.get_frame_rect().width) * column;
+                y = workArea.y + (windows[i - 1].meta_window.get_frame_rect().height) * row;
+            }
+
+            let win = windows[i].get_meta_window();
+            win.unmaximize(Meta.MaximizeFlags.BOTH);
+            win.move_resize_frame(true, x, y, width, height);
+        }
     }
 
     maximizeWindow(direction) {
@@ -253,7 +284,6 @@ function init(metadata) {
 }
 
 function enable() {
-    print("wxg: enable");
     arrange = new ArrangeMenu;
     Main.panel.addToStatusArea('arrange-menu', arrange);
 }
