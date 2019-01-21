@@ -246,7 +246,7 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 
     getWindows() {
-        let currentWorkspace = global.workspace_manager.get_active_workspace();
+        let currentWorkspace = global.screen.get_active_workspace();
 
         let windows = global.get_window_actors().filter(actor => {
             if (actor.meta_window.get_window_type() == Meta.WindowType.NORMAL)
@@ -257,7 +257,7 @@ class ArrangeMenu extends PanelMenu.Button {
 
         if (!(this._allMonitor)) {
             windows = windows.filter(w => {
-                return w.meta_window.get_monitor() == global.display.get_current_monitor();
+                return w.meta_window.get_monitor() == global.screen.get_current_monitor();
             });
         }
         return windows;
