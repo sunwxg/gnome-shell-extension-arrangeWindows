@@ -15,6 +15,7 @@ const MessageTray = imports.ui.messageTray;
 const Tweener = imports.ui.tweener;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
+const Conf = imports.misc.config;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
@@ -246,7 +247,11 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 
     getWindows() {
-        let currentWorkspace = global.screen.get_active_workspace();
+        let currentWorkspace;
+        if (this.isLess30())
+            currentWorkspace = global.screen.get_active_workspace();
+        else
+            currentWorkspace = global.workspace_manager.get_active_workspace();
 
         let windows = global.get_window_actors().filter(actor => {
             if (actor.meta_window.get_window_type() == Meta.WindowType.NORMAL)
@@ -257,7 +262,10 @@ class ArrangeMenu extends PanelMenu.Button {
 
         if (!(this._allMonitor)) {
             windows = windows.filter(w => {
-                return w.meta_window.get_monitor() == global.screen.get_current_monitor();
+                if (this.isLess30())
+                    return w.meta_window.get_monitor() == global.screen.get_current_monitor();
+                else
+                    return w.meta_window.get_monitor() == global.display.get_current_monitor();
             });
         }
         return windows;
@@ -273,6 +281,14 @@ class ArrangeMenu extends PanelMenu.Button {
     _allMonitorToggle() {
         this._allMonitor = this._allMonitorItem.state;
         this._gsettings.set_boolean(ALL_MONITOR, this._allMonitorItem.state);
+    }
+
+    isLess30() {
+        let version = Conf.PACKAGE_VERSION.split('.');
+        if (version[0] == 3 && version[1] < 30)
+            return true;
+
+        return false;
     }
 }
 
