@@ -12,4 +12,5 @@ relogin OS
 
 From gnome extensions website: https://extensions.gnome.org/extension/
 
-![screenshot](/screenshot.png)
+![cascade](/cascade.png)
+![till](/till.png)
