@@ -12,5 +12,5 @@ relogin OS
 
 From gnome extensions website: https://extensions.gnome.org/extension/
 
+![record-screen](/arrange-windows.gif)
 ![cascade](/cascade.png)
-![till](/till.png)
