@@ -6,11 +6,12 @@ Arrange windows on the monitor.
 
 ```
 make install
-
-relogin OS
 ```
+restart system
 
-From gnome extensions website: https://extensions.gnome.org/extension/
+### From gnome extensions website
+
+https://extensions.gnome.org/extension/
 
 ![record-screen](/arrange-windows.gif)
 ![cascade](/cascade.png)
