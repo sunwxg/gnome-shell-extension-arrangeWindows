@@ -5,7 +5,8 @@
   "shell-version": [
     "3.26",
     "3.28",
-    "3.30"
+    "3.30",
+    "3.32"
   ],
   "url": "https://github.com/sunwxg/gnome-shell-extension-arrangeWindows",
   "uuid": "arrangeWindows@sun.wxg@gmail.com",
