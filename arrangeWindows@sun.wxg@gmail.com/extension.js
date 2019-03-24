@@ -292,7 +292,7 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 }
 
-let arrange;
+var arrange;
 
 function init(metadata) {
         let theme = imports.gi.Gtk.IconTheme.get_default();
