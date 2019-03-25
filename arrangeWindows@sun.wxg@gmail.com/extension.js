@@ -6,6 +6,7 @@ const GLib = imports.gi.GLib;
 const St = imports.gi.St;
 const Meta = imports.gi.Meta;
 const Mainloop = imports.mainloop;
+const GObject = imports.gi.GObject;
 
 const Gettext = imports.gettext.domain('gnome-shell-extensions');
 const _ = Gettext.gettext;
@@ -28,49 +29,50 @@ const MIN_WINDOW_WIDTH = 500;
 const ARRANGEWINDOWS_SCHEMA = 'org.gnome.shell.extensions.arrangeWindows';
 const ALL_MONITOR = 'all-monitors';
 
+let ArrangeMenu = GObject.registerClass(
 class ArrangeMenu extends PanelMenu.Button {
-    constructor() {
-        super(0.0, _("Arrange Windows"));
+    _init() {
+        super._init(0.0, _('Arrange Windows'));
 
         this._gsettings = Convenience.getSettings(ARRANGEWINDOWS_SCHEMA);
 
         this._allMonitor = this._gsettings.get_boolean(ALL_MONITOR);
 
-        let icon = new St.Icon({ icon_name: 'arrange-windows-symbolic',
+        let icon = new St.Icon({ gicon: this._getCustIcon('arrange-windows-symbolic'),
                                  style_class: 'system-status-icon' });
-        this.actor.add_child(icon);
+        this.actor.add_actor(icon);
 
         this.menu.addAction(_("Cascade"),
                             () => this.cascadeWindow(),
-                            "cascade-windows-symbolic");
+                            this._getCustIcon('cascade-windows-symbolic'));
 
         this.menu.addAction(_("Tile"),
                             () => this.tileWindow(),
-                            "tile-windows-symbolic");
+                            this._getCustIcon('tile-windows-symbolic'));
 
         this.menu.addAction(_("Side by side"),
                             () => this.sideBySideWindow(),
-                            "sidebyside-windows-symbolic");
+                            this._getCustIcon('sidebyside-windows-symbolic'));
 
         this.menu.addAction(_("Stack"),
                             () => this.stackWindow(),
-                            "stack-windows-symbolic");
+                            this._getCustIcon('stack-windows-symbolic'));
 
         this.menu.addAction(_("Maximize"),
                             () => this.maximizeWindow(Meta.MaximizeFlags.BOTH),
-                            "maximize-windows-symbolic");
+                            this._getCustIcon('maximize-windows-symbolic'));
 
         this.menu.addAction(_("Maximize Vertical"),
                             () => this.maximizeWindow(Meta.MaximizeFlags.VERTICAL),
-                            "maximize-vertical-windows-symbolic");
+                            this._getCustIcon('maximize-vertical-windows-symbolic'));
 
         this.menu.addAction(_("Maximize Horizontal"),
                             () => this.maximizeWindow(Meta.MaximizeFlags.HORIZONTAL),
-                            "maximize-horizontal-windows-symbolic");
+                            this._getCustIcon('maximize-horizontal-windows-symbolic'));
 
         this.menu.addAction(_("Restoring"),
                             () => this.restoringWindow(),
-                            "restoring-window-symbolic");
+                            this._getCustIcon('restoring-window-symbolic'));
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
@@ -283,6 +285,11 @@ class ArrangeMenu extends PanelMenu.Button {
         this._gsettings.set_boolean(ALL_MONITOR, this._allMonitorItem.state);
     }
 
+    _getCustIcon(icon_name) {
+        let gicon = Gio.icon_new_for_string( Me.dir.get_child('icons').get_path() + "/" + icon_name + ".svg" );
+        return gicon;
+    }
+
     isLess30() {
         let version = Conf.PACKAGE_VERSION.split('.');
         if (version[0] == 3 && version[1] < 30)
@@ -290,7 +297,7 @@ class ArrangeMenu extends PanelMenu.Button {
 
         return false;
     }
-}
+});
 
 let arrange;
 
