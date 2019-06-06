@@ -15,6 +15,7 @@ const MessageTray = imports.ui.messageTray;
 const Tweener = imports.ui.tweener;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
+const Slider = imports.ui.slider;
 const Conf = imports.misc.config;
 
 const ExtensionUtils = imports.misc.extensionUtils;
@@ -27,6 +28,9 @@ const MIN_WINDOW_WIDTH = 500;
 
 const ARRANGEWINDOWS_SCHEMA = 'org.gnome.shell.extensions.arrangeWindows';
 const ALL_MONITOR = 'all-monitors';
+const COLUMN_NUMBER = 'column';
+
+const COLUMN = ['2', '3', '4', '5', '6', '7', '8'];
 
 class ArrangeMenu extends PanelMenu.Button {
     constructor() {
@@ -76,7 +80,10 @@ class ArrangeMenu extends PanelMenu.Button {
 
         this._allMonitorItem = new PopupMenu.PopupSwitchMenuItem(_("All monitors"), this._allMonitor)
         this._allMonitorItem.connect('toggled', this._allMonitorToggle.bind(this));
-        this.menu.addMenuItem( this._allMonitorItem );
+        this.menu.addMenuItem(this._allMonitorItem);
+
+        this._column = new Column();
+        this.menu.addMenuItem(this._column.menu);
 
         this.actor.show();
     }
@@ -156,12 +163,7 @@ class ArrangeMenu extends PanelMenu.Button {
 
         let workArea = this.getWorkArea(windows[0]);
 
-        let columnMaxNumber = 1;
-        while ((workArea.width / columnMaxNumber) > MIN_WINDOW_WIDTH) {
-            columnMaxNumber++;
-        }
-
-        let columnNumber = (windows.length < columnMaxNumber) ? windows.length : columnMaxNumber;
+        let columnNumber = parseInt(COLUMN[this._gsettings.get_int(COLUMN_NUMBER)]);
         let rowNumber = Math.floor(windows.length / columnNumber) + ((windows.length % columnNumber) > 0 ? 1 : 0);
         let width = Math.round(workArea.width / columnNumber)
         let height = Math.round(workArea.height/ rowNumber)
@@ -289,6 +291,34 @@ class ArrangeMenu extends PanelMenu.Button {
             return true;
 
         return false;
+    }
+}
+
+class Column extends PanelMenu.SystemIndicator {
+    constructor() {
+        super();
+
+        this._gsettings = Convenience.getSettings(ARRANGEWINDOWS_SCHEMA);
+
+        this._item = new PopupMenu.PopupBaseMenuItem({ activate: false });
+        this.menu.addMenuItem(this._item);
+
+        this._slider = new Slider.Slider(0);
+        this._slider.connect('value-changed', this._sliderChanged.bind(this));
+
+        let number = this._gsettings.get_int(COLUMN_NUMBER);
+        this._slider.setValue(number / 6);
+        this._label = new St.Label({ text: 'Tile x' + COLUMN[number] });
+
+        this._item.actor.add(this._label);
+        this._item.actor.add(this._slider.actor, { expand: true });
+    }
+
+    _sliderChanged(slider, value) {
+        let number = Math.round(value * 6);
+        this._slider.setValue(number / 6);
+        this._label.set_text('Tile x' + COLUMN[number]);
+        this._gsettings.set_int(COLUMN_NUMBER, number);
     }
 }
 
