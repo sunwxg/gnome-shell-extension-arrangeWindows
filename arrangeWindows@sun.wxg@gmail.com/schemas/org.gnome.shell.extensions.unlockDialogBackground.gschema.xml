@@ -6,5 +6,11 @@
       <description>
       </description>
     </key>
+    <key name="column" type="i">
+      <default>1</default>
+      <summary>column number when tiling</summary>
+      <description>
+      </description>
+    </key>
   </schema>
 </schemalist>
