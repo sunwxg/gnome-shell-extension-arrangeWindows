@@ -121,15 +121,9 @@ class ArrangeMenu extends PanelMenu.Button {
         for (let i = 0; i < windows.length; i++) {
             let win = windows[i].get_meta_window();
             win.unmaximize(Meta.MaximizeFlags.BOTH);
-            win.move_resize_frame(true, x, y, width, workArea.height);
-            x = x + win.get_frame_rect().width;
+            win.move_resize_frame(false, x, y, width, workArea.height);
+            x = x + width;
         }
-
-        let last_win = windows[windows.length - 1].meta_window;
-        x = last_win.get_frame_rect().x;
-        last_win.move_resize_frame(false, x, y,
-                                   workArea.x + workArea.width - x,
-                                   workArea.height);
     }
 
     stackWindow() {
@@ -145,15 +139,9 @@ class ArrangeMenu extends PanelMenu.Button {
         for (let i = 0; i < windows.length; i++) {
             let win = windows[i].get_meta_window();
             win.unmaximize(Meta.MaximizeFlags.BOTH);
-            win.move_resize_frame(true, x, y, workArea.width, height);
-            y = y + win.get_frame_rect().height;
+            win.move_resize_frame(false, x, y, workArea.width, height);
+            y += height;
         }
-
-        let last_win = windows[windows.length - 1].meta_window;
-        y = last_win.get_frame_rect().y;
-        last_win.move_resize_frame(false, x, y,
-                                   workArea.width,
-                                   workArea.y + workArea.height - y);
     }
 
     tileWindow() {
@@ -173,17 +161,12 @@ class ArrangeMenu extends PanelMenu.Button {
         for (let i = 0; i < windows.length; i++) {
             let row = Math.floor(i / columnNumber);
             let column = i % columnNumber;
-            if (i == 0) {
-                x = workArea.x + width * column;
-                y = workArea.y + height * row;
-            } else {
-                x = workArea.x + (windows[i - 1].meta_window.get_frame_rect().width) * column;
-                y = workArea.y + (windows[i - 1].meta_window.get_frame_rect().height) * row;
-            }
+            x = workArea.x + width * column;
+            y = workArea.y + height * row;
 
             let win = windows[i].get_meta_window();
             win.unmaximize(Meta.MaximizeFlags.BOTH);
-            win.move_resize_frame(true, x, y, width, height);
+            win.move_resize_frame(false, x, y, width, height);
         }
     }
 
