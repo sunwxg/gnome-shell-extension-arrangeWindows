@@ -3,7 +3,7 @@
   "name": "Arrange Windows", 
   "original-authors": "sun.wxg@gmail.com", 
   "shell-version": [
-    "3.32"
+    "3.34"
   ],
   "url": "https://github.com/sunwxg/gnome-shell-extension-arrangeWindows",
   "uuid": "arrangeWindows@sun.wxg@gmail.com",

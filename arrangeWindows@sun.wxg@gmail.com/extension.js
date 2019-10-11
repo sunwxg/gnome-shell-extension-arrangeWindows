@@ -44,7 +44,7 @@ class ArrangeMenu extends PanelMenu.Button {
 
         let icon = new St.Icon({ gicon: this._getCustIcon('arrange-windows-symbolic'),
                                  style_class: 'system-status-icon' });
-        this.actor.add_actor(icon);
+        this.add_actor(icon);
 
         this.menu.addAction(_("Cascade"),
                             () => this.cascadeWindow(),
@@ -87,7 +87,7 @@ class ArrangeMenu extends PanelMenu.Button {
         this._column = new Column();
         this.menu.addMenuItem(this._column.menu);
 
-        this.actor.show();
+        this.show();
     }
 
     cascadeWindow() {
@@ -294,19 +294,18 @@ class Column extends PanelMenu.SystemIndicator {
         this.menu.addMenuItem(this._item);
 
         this._slider = new Slider.Slider(0);
-        this._slider.connect('value-changed', this._sliderChanged.bind(this));
+        this._slider.connect('drag-end', this._sliderChanged.bind(this));
 
         let number = this._gsettings.get_int(COLUMN_NUMBER);
-        this._slider.setValue(number / 6);
+        this._slider.value = number / 6;
         this._label = new St.Label({ text: 'Tile x' + COLUMN[number] });
 
-        this._item.actor.add(this._label);
-        this._item.actor.add(this._slider.actor, { expand: true });
+        this._item.add(this._label);
+        this._item.add(this._slider, { expand: true });
     }
 
-    _sliderChanged(slider, value) {
-        let number = Math.round(value * 6);
-        this._slider.setValue(number / 6);
+    _sliderChanged() {
+        let number = Math.round(this._slider.value * 6);
         this._label.set_text('Tile x' + COLUMN[number]);
         this._gsettings.set_int(COLUMN_NUMBER, number);
     }
