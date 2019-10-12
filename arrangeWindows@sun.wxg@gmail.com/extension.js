@@ -306,6 +306,7 @@ class Column extends PanelMenu.SystemIndicator {
 
     _sliderChanged() {
         let number = Math.round(this._slider.value * 6);
+        this._slider.value = number / 6;
         this._label.set_text('Tile x' + COLUMN[number]);
         this._gsettings.set_int(COLUMN_NUMBER, number);
     }
