@@ -234,11 +234,7 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 
     getWindows() {
-        let currentWorkspace;
-        if (this.isLess30())
-            currentWorkspace = global.screen.get_active_workspace();
-        else
-            currentWorkspace = global.workspace_manager.get_active_workspace();
+        let currentWorkspace = global.workspace_manager.get_active_workspace();
 
         let windows = global.get_window_actors().filter(actor => {
             if (actor.meta_window.get_window_type() == Meta.WindowType.NORMAL)
@@ -249,13 +245,15 @@ class ArrangeMenu extends PanelMenu.Button {
 
         if (!(this._allMonitor)) {
             windows = windows.filter(w => {
-                if (this.isLess30())
-                    return w.meta_window.get_monitor() == global.screen.get_current_monitor();
-                else
-                    return w.meta_window.get_monitor() == global.display.get_current_monitor();
+                return w.meta_window.get_monitor() == this.getFocusedMonitor();
             });
         }
         return windows;
+    }
+
+    getFocusedMonitor() {
+        let focusWindow = global.display.get_focus_window();
+        return focusWindow.get_monitor();
     }
 
     getWorkArea(window) {
@@ -273,14 +271,6 @@ class ArrangeMenu extends PanelMenu.Button {
     _getCustIcon(icon_name) {
         let gicon = Gio.icon_new_for_string( Me.dir.get_child('icons').get_path() + "/" + icon_name + ".svg" );
         return gicon;
-    }
-
-    isLess30() {
-        let version = Conf.PACKAGE_VERSION.split('.');
-        if (version[0] == 3 && version[1] < 30)
-            return true;
-
-        return false;
     }
 });
 
