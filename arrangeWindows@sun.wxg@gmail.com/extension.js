@@ -5,6 +5,7 @@ const Clutter = imports.gi.Clutter;
 const GLib = imports.gi.GLib;
 const St = imports.gi.St;
 const Meta = imports.gi.Meta;
+const Shell = imports.gi.Shell;
 const Mainloop = imports.mainloop;
 const GObject = imports.gi.GObject;
 
@@ -30,6 +31,10 @@ const MIN_WINDOW_WIDTH = 500;
 const ARRANGEWINDOWS_SCHEMA = 'org.gnome.shell.extensions.arrangeWindows';
 const ALL_MONITOR = 'all-monitors';
 const COLUMN_NUMBER = 'column';
+const HOTKEY_CASCADE = 'hotkey-cascade';
+const HOTKEY_TILE = 'hotkey-tile';
+const HOTKEY_SIDEBYSIDE = 'hotkey-sidebyside';
+const HOTKEY_STACK = 'hotkey-stack';
 
 const COLUMN = ['2', '3', '4', '5', '6', '7', '8'];
 
@@ -88,6 +93,9 @@ class ArrangeMenu extends PanelMenu.Button {
         this.menu.addMenuItem(this._column.menu);
 
         this.show();
+
+        this.addKeybinding();
+        this.connect('destroy', this._onDestroy.bind(this));
     }
 
     cascadeWindow() {
@@ -271,6 +279,43 @@ class ArrangeMenu extends PanelMenu.Button {
     _getCustIcon(icon_name) {
         let gicon = Gio.icon_new_for_string( Me.dir.get_child('icons').get_path() + "/" + icon_name + ".svg" );
         return gicon;
+    }
+
+    addKeybinding() {
+        let ModeType = Shell.hasOwnProperty('ActionMode') ?
+                       Shell.ActionMode : Shell.KeyBindingMode;
+
+        Main.wm.addKeybinding(HOTKEY_CASCADE,
+                              this._gsettings,
+                              Meta.KeyBindingFlags.NONE,
+                              ModeType.ALL,
+                              this.cascadeWindow.bind(this),
+                              );
+        Main.wm.addKeybinding(HOTKEY_TILE,
+                              this._gsettings,
+                              Meta.KeyBindingFlags.NONE,
+                              ModeType.ALL,
+                              this.tileWindow.bind(this),
+                              );
+        Main.wm.addKeybinding(HOTKEY_SIDEBYSIDE,
+                              this._gsettings,
+                              Meta.KeyBindingFlags.NONE,
+                              ModeType.ALL,
+                              this.sideBySideWindow.bind(this),
+                              );
+        Main.wm.addKeybinding(HOTKEY_STACK,
+                              this._gsettings,
+                              Meta.KeyBindingFlags.NONE,
+                              ModeType.ALL,
+                              this.stackWindow.bind(this),
+                              );
+    }
+
+    _onDestroy(){
+        //Main.wm.removeKeybinding(HOTKEY_CASCADE);
+        //Main.wm.removeKeybinding(HOTKEY_TILE);
+        //Main.wm.removeKeybinding(HOTKEY_SIDEBYSIDE);
+        //Main.wm.removeKeybinding(HOTKEY_STACK);
     }
 });
 
