@@ -312,10 +312,10 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 
     _onDestroy(){
-        //Main.wm.removeKeybinding(HOTKEY_CASCADE);
-        //Main.wm.removeKeybinding(HOTKEY_TILE);
-        //Main.wm.removeKeybinding(HOTKEY_SIDEBYSIDE);
-        //Main.wm.removeKeybinding(HOTKEY_STACK);
+        Main.wm.removeKeybinding(HOTKEY_CASCADE);
+        Main.wm.removeKeybinding(HOTKEY_TILE);
+        Main.wm.removeKeybinding(HOTKEY_SIDEBYSIDE);
+        Main.wm.removeKeybinding(HOTKEY_STACK);
     }
 });
 
