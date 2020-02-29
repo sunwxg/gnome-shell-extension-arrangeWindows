@@ -319,9 +319,10 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 });
 
+let Column = GObject.registerClass(
 class Column extends PanelMenu.SystemIndicator {
-    constructor() {
-        super();
+    _init() {
+        super._init();
 
         this._gsettings = Convenience.getSettings(ARRANGEWINDOWS_SCHEMA);
 
@@ -336,7 +337,7 @@ class Column extends PanelMenu.SystemIndicator {
         this._label = new St.Label({ text: 'Tile x' + COLUMN[number] });
 
         this._item.add(this._label);
-        this._item.add(this._slider, { expand: true });
+        this._item.add(this._slider);
     }
 
     _sliderChanged() {
@@ -345,7 +346,7 @@ class Column extends PanelMenu.SystemIndicator {
         this._label.set_text('Tile x' + COLUMN[number]);
         this._gsettings.set_int(COLUMN_NUMBER, number);
     }
-}
+});
 
 let arrange;
 
