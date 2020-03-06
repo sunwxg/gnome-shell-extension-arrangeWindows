@@ -12,25 +12,25 @@
       <description>
       </description>
     </key>
-    <key name="hotkey-cascade" type="as">
+    <key name="arrangewindow-cascade" type="as">
       <default><![CDATA[['<Control><Alt>1']]]></default>
       <summary>Key to cascade</summary>
       <description>
       </description>
     </key>
-    <key name="hotkey-tile" type="as">
+    <key name="arrangewindow-tile" type="as">
       <default><![CDATA[['<Control><Alt>2']]]></default>
       <summary>Key to tile</summary>
       <description>
       </description>
     </key>
-    <key name="hotkey-sidebyside" type="as">
+    <key name="arrangewindow-sidebyside" type="as">
       <default><![CDATA[['<Control><Alt>3']]]></default>
       <summary>Key to side by side</summary>
       <description>
       </description>
     </key>
-    <key name="hotkey-stack" type="as">
+    <key name="arrangewindow-stack" type="as">
       <default><![CDATA[['<Control><Alt>4']]]></default>
       <summary>Key to stack</summary>
       <description>

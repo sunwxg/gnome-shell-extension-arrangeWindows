@@ -31,10 +31,10 @@ const MIN_WINDOW_WIDTH = 500;
 const ARRANGEWINDOWS_SCHEMA = 'org.gnome.shell.extensions.arrangeWindows';
 const ALL_MONITOR = 'all-monitors';
 const COLUMN_NUMBER = 'column';
-const HOTKEY_CASCADE = 'hotkey-cascade';
-const HOTKEY_TILE = 'hotkey-tile';
-const HOTKEY_SIDEBYSIDE = 'hotkey-sidebyside';
-const HOTKEY_STACK = 'hotkey-stack';
+const HOTKEY_CASCADE = 'arrangewindow-cascade';
+const HOTKEY_TILE = 'arrangewindow-tile';
+const HOTKEY_SIDEBYSIDE = 'arrangewindow-sidebyside';
+const HOTKEY_STACK = 'arrangewindow-stack';
 
 const COLUMN = ['2', '3', '4', '5', '6', '7', '8'];
 
@@ -94,7 +94,6 @@ class ArrangeMenu extends PanelMenu.Button {
 
         this.show();
 
-        this.addKeybinding();
         this.connect('destroy', this._onDestroy.bind(this));
     }
 
@@ -261,7 +260,11 @@ class ArrangeMenu extends PanelMenu.Button {
 
     getFocusedMonitor() {
         let focusWindow = global.display.get_focus_window();
-        return focusWindow.get_monitor();
+        if (focusWindow) {
+            return focusWindow.get_monitor();
+        } else {
+            return global.display.get_current_monitor();
+        }
     }
 
     getWorkArea(window) {
@@ -281,41 +284,7 @@ class ArrangeMenu extends PanelMenu.Button {
         return gicon;
     }
 
-    addKeybinding() {
-        let ModeType = Shell.hasOwnProperty('ActionMode') ?
-                       Shell.ActionMode : Shell.KeyBindingMode;
-
-        Main.wm.addKeybinding(HOTKEY_CASCADE,
-                              this._gsettings,
-                              Meta.KeyBindingFlags.NONE,
-                              ModeType.ALL,
-                              this.cascadeWindow.bind(this),
-                              );
-        Main.wm.addKeybinding(HOTKEY_TILE,
-                              this._gsettings,
-                              Meta.KeyBindingFlags.NONE,
-                              ModeType.ALL,
-                              this.tileWindow.bind(this),
-                              );
-        Main.wm.addKeybinding(HOTKEY_SIDEBYSIDE,
-                              this._gsettings,
-                              Meta.KeyBindingFlags.NONE,
-                              ModeType.ALL,
-                              this.sideBySideWindow.bind(this),
-                              );
-        Main.wm.addKeybinding(HOTKEY_STACK,
-                              this._gsettings,
-                              Meta.KeyBindingFlags.NONE,
-                              ModeType.ALL,
-                              this.stackWindow.bind(this),
-                              );
-    }
-
     _onDestroy(){
-        Main.wm.removeKeybinding(HOTKEY_CASCADE);
-        Main.wm.removeKeybinding(HOTKEY_TILE);
-        Main.wm.removeKeybinding(HOTKEY_SIDEBYSIDE);
-        Main.wm.removeKeybinding(HOTKEY_STACK);
     }
 });
 
@@ -348,6 +317,38 @@ class Column extends PanelMenu.SystemIndicator {
     }
 });
 
+function addKeybinding() {
+    let modeType = Shell.ActionMode.NORMAL;
+
+    Main.wm.addKeybinding(HOTKEY_CASCADE,
+                          arrange._gsettings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          arrange.cascadeWindow.bind(arrange));
+    Main.wm.addKeybinding(HOTKEY_TILE,
+                          arrange._gsettings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          arrange.tileWindow.bind(arrange));
+    Main.wm.addKeybinding(HOTKEY_SIDEBYSIDE,
+                          arrange._gsettings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          arrange.sideBySideWindow.bind(arrange));
+    Main.wm.addKeybinding(HOTKEY_STACK,
+                          arrange._gsettings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          arrange.stackWindow.bind(arrange));
+}
+
+function removeKeybinding(){
+    Main.wm.removeKeybinding(HOTKEY_CASCADE);
+    Main.wm.removeKeybinding(HOTKEY_TILE);
+    Main.wm.removeKeybinding(HOTKEY_SIDEBYSIDE);
+    Main.wm.removeKeybinding(HOTKEY_STACK);
+}
+
 let arrange;
 
 function init(metadata) {
@@ -358,8 +359,10 @@ function init(metadata) {
 function enable() {
     arrange = new ArrangeMenu;
     Main.panel.addToStatusArea('arrange-menu', arrange);
+    addKeybinding();
 }
 
 function disable() {
+    removeKeybinding();
     arrange.destroy();
 }
