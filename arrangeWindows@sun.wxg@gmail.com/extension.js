@@ -154,42 +154,122 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 
     tileWindow() {
+        /* Display all windows in a grid defined by the number of columns in
+         * settings.
+         *
+         * In the last row, the rectangles may be wider so that the remaining
+         * windows equally share the total width.
+         *
+         * Try to assign the windows to the closest rectangle in the grid so that
+         * windows move by the smallest amount. This is important because they
+         * may be pressing tile from a state that is already tiled so wouldn't expect
+         * the windows to change order.
+         *
+         * A quick heuristic to approximate this is to calculate the closest grid position
+         * for each window and then assign them to the closest available in order
+         * of shortest first.
+         */
+
         let windows = this.getWindows();
         if (windows.length == 0) return;
         let workArea = this.getWorkArea(windows[0]);
-
-        // Moves windows[i] to position (x, y) with size (w, h)
-        function moveWindow(i, x, y, w, h) {
-            const win = windows[i].get_meta_window();
-            win.unmaximize(Meta.MaximizeFlags.BOTH);
-            win.move_resize_frame(false, x, y, w, h);
-        }
 
         // Get number of columns from settings
         let columnNumber = parseInt(COLUMN[this._gsettings.get_int(COLUMN_NUMBER)]);
         // Calculate number of rows based on number of windows and number of columns
         let rowNumber = Math.ceil(windows.length / columnNumber);
-        // Calculate width and height. Width applies for all but the last row
-        let windowWidth = Math.floor(workArea.width / columnNumber);
-        let windowHeight = Math.floor(workArea.height/ rowNumber);
 
-        // Resize windows for all but the last row
-        for (let row = 0; row < rowNumber - 1; row ++) {
-            for (let column = 0; column < columnNumber; column ++) {
-                const x = workArea.x + windowWidth * column;
-                const y = workArea.y + windowHeight * row;
-                moveWindow(row * columnNumber + column, x, y, windowWidth, windowHeight);
+        // Create the grid
+        let gridCells = [];
+        for (let i = 0; i < windows.length; i ++) {
+            let row = Math.floor(i / columnNumber);
+            let col = i % columnNumber;
+
+            let gridWidth = Math.floor(workArea.width / columnNumber);
+            let gridHeight = Math.floor(workArea.height / rowNumber);
+            let numLastRow = windows.length % columnNumber;
+
+            let cell = {};
+
+            if (row + 1 === rowNumber && numLastRow !== 0) {
+                // In the last row, recalculate width so that they fill the screen
+                let gridWidthLastRow = Math.floor(workArea.width / numLastRow);
+                global.log(numLastRow, gridWidthLastRow);
+                cell.x = col * gridWidthLastRow;
+                cell.w = gridWidthLastRow;
+            } else {
+                cell.x = col * gridWidth;
+                cell.w = gridWidth;
+            }
+            cell.y = row * gridHeight;
+            cell.h = gridHeight;
+            cell.centerX = cell.x + cell.w / 2;
+            cell.centerY = cell.y + cell.h / 2;
+            global.log(`cell.cX: ${cell.centerX} cell.x: ${cell.x} cell.cY: ${cell.centerY} cell.x: ${cell.y}`);
+            gridCells.push(cell);
+        }
+
+        // Calculate distances[i][j] as the distance from windows[i] to
+        // gridCells[j].
+        let distances = [];
+        for (let windowI = 0; windowI < windows.length; windowI ++) {
+            const win = windows[windowI];
+            const windowCenterX = win.x + win.width / 2;
+            const windowCenterY = win.y + win.height / 2;
+            global.log(`win.cX: ${windowCenterX}, win.cY: ${windowCenterY}`);
+            distances[windowI] = [];
+            for (let cellJ = 0; cellJ < gridCells.length; cellJ ++) {
+                const cell = gridCells[cellJ];
+                global.log(`cell.cX: ${cell.centerX} cell.x: ${cell.x}`);
+                // TODO: What if minimised?
+                const dist = Math.sqrt((windowCenterX - cell.centerX) ** 2 +
+                    (windowCenterY - cell.centerY) ** 2);
+                global.log(`before sqrt: ${(windowCenterX - cell.centerX) ** 2 + (windowCenterY - cell.centerY) ** 2}`);
+                if (dist < 0 || dist > 4000) {
+                    throw Error(`unusual distance ${dist}`);
+                }
+                distances[windowI][cellJ] = dist;
             }
         }
 
-        // In the last row, recalculate width so that they fill the screen
-        let numLastRow = windows.length % columnNumber;
-        let lastRowWindowWidth = Math.floor(workArea.width / numLastRow);
-        let row = rowNumber - 1;
-        for (let i = 0; row * columnNumber + i < windows.length; i ++) {
-            const x = workArea.x + lastRowWindowWidth * i;
-            const y = workArea.y + windowHeight * row;
-            moveWindow(row * columnNumber + i, x, y, lastRowWindowWidth, windowHeight);
+        // Move window into cell
+        function moveWindow(wind, cell) {
+            const win = wind.get_meta_window();
+            win.unmaximize(Meta.MaximizeFlags.BOTH);
+            win.move_resize_frame(false, cell.x, cell.y, cell.w, cell.h);
+        }
+
+        // Now we can assign windows in order of closest
+        const windowIsToMove = new Set(windows.keys());
+        const cellJsToFill = new Set(gridCells.keys());
+
+        for (let i = 0; i < windows.length; i ++) {
+            if (windowIsToMove.size !== cellJsToFill.size)
+                throw Error('Expected to assign one cell per window');
+            let minDist = Infinity;
+            let minI, minJ;
+            windowIsToMove.forEach(windowI =>
+                cellJsToFill.forEach(cellJ => {
+                        if (distances[windowI][cellJ] < minDist) {
+                            global.log(`Updating minDist from ${minDist} to ${distances[windowI][cellJ]}`);
+                            minDist = distances[windowI][cellJ];
+                            minI = windowI;
+                            minJ = cellJ;
+                        } else {
+                            global.log(`${distances[windowI][cellJ]} not less than ${minDist}`)
+                        }
+                    }
+                )
+            );
+
+            if (minI === undefined || minJ === undefined) {
+                throw Error('Expected to define minI and minJ')
+            } else {
+                moveWindow(windows[minI], gridCells[minJ]);
+                global.log('Deleting from windowIsToMove');
+                windowIsToMove.delete(minI);
+                cellJsToFill.delete(minJ);
+            }
         }
     }
 
