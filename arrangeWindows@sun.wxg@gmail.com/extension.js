@@ -155,27 +155,41 @@ class ArrangeMenu extends PanelMenu.Button {
 
     tileWindow() {
         let windows = this.getWindows();
-        if (windows.length == 0)
-            return;
-
+        if (windows.length == 0) return;
         let workArea = this.getWorkArea(windows[0]);
 
-        let columnNumber = parseInt(COLUMN[this._gsettings.get_int(COLUMN_NUMBER)]);
-        let rowNumber = Math.floor(windows.length / columnNumber) + ((windows.length % columnNumber) > 0 ? 1 : 0);
-        let width = Math.round(workArea.width / columnNumber)
-        let height = Math.round(workArea.height/ rowNumber)
-        let x = workArea.x;
-        let y = workArea.y;
-
-        for (let i = 0; i < windows.length; i++) {
-            let row = Math.floor(i / columnNumber);
-            let column = i % columnNumber;
-            x = workArea.x + width * column;
-            y = workArea.y + height * row;
-
-            let win = windows[i].get_meta_window();
+        // Moves windows[i] to position (x, y) with size (w, h)
+        function moveWindow(i, x, y, w, h) {
+            const win = windows[i].get_meta_window();
             win.unmaximize(Meta.MaximizeFlags.BOTH);
-            win.move_resize_frame(false, x, y, width, height);
+            win.move_resize_frame(false, x, y, w, h);
+        }
+
+        // Get number of columns from settings
+        let columnNumber = parseInt(COLUMN[this._gsettings.get_int(COLUMN_NUMBER)]);
+        // Calculate number of rows based on number of windows and number of columns
+        let rowNumber = Math.ceil(windows.length / columnNumber);
+        // Calculate width and height. Width applies for all but the last row
+        let windowWidth = Math.floor(workArea.width / columnNumber);
+        let windowHeight = Math.floor(workArea.height/ rowNumber);
+
+        // Resize windows for all but the last row
+        for (let row = 0; row < rowNumber - 1; row ++) {
+            for (let column = 0; column < columnNumber; column ++) {
+                const x = workArea.x + windowWidth * column;
+                const y = workArea.y + windowHeight * row;
+                moveWindow(row * columnNumber + column, x, y, windowWidth, windowHeight);
+            }
+        }
+
+        // In the last row, recalculate width so that they fill the screen
+        let numLastRow = windows.length % columnNumber;
+        let lastRowWindowWidth = Math.floor(workArea.width / numLastRow);
+        let row = rowNumber - 1;
+        for (let i = 0; row * columnNumber + i < windows.length; i ++) {
+            const x = workArea.x + lastRowWindowWidth * i;
+            const y = workArea.y + windowHeight * row;
+            moveWindow(row * columnNumber + i, x, y, lastRowWindowWidth, windowHeight);
         }
     }
 
