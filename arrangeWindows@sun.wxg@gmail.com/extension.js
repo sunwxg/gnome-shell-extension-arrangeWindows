@@ -194,13 +194,13 @@ class ArrangeMenu extends PanelMenu.Button {
             if (row + 1 === rowNumber && numLastRow !== 0) {
                 // In the last row, recalculate width so that they fill the screen
                 let gridWidthLastRow = Math.floor(workArea.width / numLastRow);
-                cell.x = col * gridWidthLastRow;
+                cell.x = workArea.x + col * gridWidthLastRow;
                 cell.w = gridWidthLastRow;
             } else {
-                cell.x = col * gridWidth;
+                cell.x = workArea.x + col * gridWidth;
                 cell.w = gridWidth;
             }
-            cell.y = row * gridHeight;
+            cell.y = workArea.y + row * gridHeight;
             cell.h = gridHeight;
             cell.centerX = cell.x + cell.w / 2;
             cell.centerY = cell.y + cell.h / 2;
