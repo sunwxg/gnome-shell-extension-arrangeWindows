@@ -221,7 +221,6 @@ class ArrangeMenu extends PanelMenu.Button {
             for (let cellJ = 0; cellJ < gridCells.length; cellJ ++) {
                 const cell = gridCells[cellJ];
                 global.log(`cell.cX: ${cell.centerX} cell.x: ${cell.x}`);
-                // TODO: What if minimised?
                 const dist = Math.sqrt((windowCenterX - cell.centerX) ** 2 +
                     (windowCenterY - cell.centerY) ** 2);
                 global.log(`before sqrt: ${(windowCenterX - cell.centerX) ** 2 + (windowCenterY - cell.centerY) ** 2}`);
@@ -236,6 +235,7 @@ class ArrangeMenu extends PanelMenu.Button {
         function moveWindow(wind, cell) {
             const win = wind.get_meta_window();
             win.unmaximize(Meta.MaximizeFlags.BOTH);
+            win.unminimize();
             win.move_resize_frame(false, cell.x, cell.y, cell.w, cell.h);
         }
 
