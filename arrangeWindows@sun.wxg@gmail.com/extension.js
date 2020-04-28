@@ -194,7 +194,6 @@ class ArrangeMenu extends PanelMenu.Button {
             if (row + 1 === rowNumber && numLastRow !== 0) {
                 // In the last row, recalculate width so that they fill the screen
                 let gridWidthLastRow = Math.floor(workArea.width / numLastRow);
-                global.log(numLastRow, gridWidthLastRow);
                 cell.x = col * gridWidthLastRow;
                 cell.w = gridWidthLastRow;
             } else {
@@ -236,7 +235,7 @@ class ArrangeMenu extends PanelMenu.Button {
         const windowIsToMove = new Set(windows.keys());
         const cellJsToFill = new Set(gridCells.keys());
 
-        // Add windows, closest to grid position first.
+        // Move windows, closest to grid position first.
         for (let i = 0; i < windows.length; i ++) {
             if (windowIsToMove.size !== cellJsToFill.size)
                 throw Error('Expected to assign one cell per window');
@@ -253,7 +252,6 @@ class ArrangeMenu extends PanelMenu.Button {
                 )
             );
             moveWindow(windows[minI], gridCells[minJ]);
-            global.log('Deleting from windowIsToMove');
             windowIsToMove.delete(minI);
             cellJsToFill.delete(minJ);
         }
