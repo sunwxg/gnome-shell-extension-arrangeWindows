@@ -19,7 +19,6 @@ const Slider = imports.ui.slider;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-const Convenience = Me.imports.convenience;
 
 const CASCADE_WIDTH = 30;
 const CASCADE_HEIGHT = 30;
@@ -40,7 +39,7 @@ class ArrangeMenu extends PanelMenu.Button {
     _init() {
         super._init(0.0, _('Arrange Windows'));
 
-        this._gsettings = Convenience.getSettings(ARRANGEWINDOWS_SCHEMA);
+        this._gsettings = ExtensionUtils.getSettings(ARRANGEWINDOWS_SCHEMA);
 
         this._allMonitor = this._gsettings.get_boolean(ALL_MONITOR);
 
@@ -368,7 +367,7 @@ class Column extends PanelMenu.SystemIndicator {
     _init() {
         super._init();
 
-        this._gsettings = Convenience.getSettings(ARRANGEWINDOWS_SCHEMA);
+        this._gsettings = ExtensionUtils.getSettings(ARRANGEWINDOWS_SCHEMA);
 
         this._item = new PopupMenu.PopupBaseMenuItem({ activate: false });
         this.menu.addMenuItem(this._item);
