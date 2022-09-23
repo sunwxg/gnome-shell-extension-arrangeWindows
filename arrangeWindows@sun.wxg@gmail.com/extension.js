@@ -437,4 +437,5 @@ function enable() {
 function disable() {
     removeKeybinding();
     arrange.destroy();
+    arrange = null;
 }
