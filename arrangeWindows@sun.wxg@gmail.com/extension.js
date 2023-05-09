@@ -31,6 +31,7 @@ const HOTKEY_CASCADE = 'arrangewindow-cascade';
 const HOTKEY_TILE = 'arrangewindow-tile';
 const HOTKEY_SIDEBYSIDE = 'arrangewindow-sidebyside';
 const HOTKEY_STACK = 'arrangewindow-stack';
+const KEY_GAP = 'gap';
 
 const COLUMN = ['2', '3', '4', '5', '6', '7', '8'];
 
@@ -88,6 +89,11 @@ class ArrangeMenu extends PanelMenu.Button {
         this._column = new Column();
         this.menu.addMenuItem(this._column.menu);
 
+        this.gap= this._gsettings.get_int(KEY_GAP);
+        this.gapID = this._gsettings.connect("changed::" + KEY_GAP, () => {
+            this.gap = this._gsettings.get_int(KEY_GAP);
+        });
+
         this.show();
 
         this.connect('destroy', this._onDestroy.bind(this));
@@ -107,7 +113,7 @@ class ArrangeMenu extends PanelMenu.Button {
         for (let i = 0; i < windows.length; i++) {
             let win = windows[i].get_meta_window();
             win.unmaximize(Meta.MaximizeFlags.BOTH);
-            win.move_resize_frame(true, x, y, width, height);
+            win.move_resize_frame(false, x, y, width, height);
             x = x + CASCADE_WIDTH;
             y = y + CASCADE_HEIGHT;
         }
@@ -126,7 +132,7 @@ class ArrangeMenu extends PanelMenu.Button {
         for (let i = 0; i < windows.length; i++) {
             let win = windows[i].get_meta_window();
             win.unmaximize(Meta.MaximizeFlags.BOTH);
-            win.move_resize_frame(false, x, y, width, workArea.height);
+            win.move_resize_frame(false, x + this.gap, y + this.gap, width - (2 * this.gap), workArea.height - (2 * this.gap));
             x = x + width;
         }
     }
@@ -144,7 +150,7 @@ class ArrangeMenu extends PanelMenu.Button {
         for (let i = 0; i < windows.length; i++) {
             let win = windows[i].get_meta_window();
             win.unmaximize(Meta.MaximizeFlags.BOTH);
-            win.move_resize_frame(false, x, y, workArea.width, height);
+            win.move_resize_frame(false, x + this.gap, y + this.gap, workArea.width - (2 * this.gap), height - (2 * this.gap));
             y += height;
         }
     }
@@ -220,11 +226,11 @@ class ArrangeMenu extends PanelMenu.Button {
         }
 
         // Move window into cell
-        function moveWindow(wind, cell) {
+        function moveWindow(wind, cell, gap) {
             const win = wind.get_meta_window();
             win.unmaximize(Meta.MaximizeFlags.BOTH);
             win.unminimize();
-            win.move_resize_frame(false, cell.x, cell.y, cell.w, cell.h);
+            win.move_resize_frame(false, cell.x + gap, cell.y + gap, cell.w - (2 * gap), cell.h - (2 * gap));
         }
 
         // Now we can assign windows in order of closest
@@ -247,7 +253,7 @@ class ArrangeMenu extends PanelMenu.Button {
                     }
                 )
             );
-            moveWindow(windows[minI], gridCells[minJ]);
+            moveWindow(windows[minI], gridCells[minJ], this.gap);
             windowIsToMove.delete(minI);
             cellJsToFill.delete(minJ);
         }
@@ -359,6 +365,8 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 
     _onDestroy(){
+        if (this.gapID)
+            this.settings.disconnect(this.gapID);
     }
 });
 

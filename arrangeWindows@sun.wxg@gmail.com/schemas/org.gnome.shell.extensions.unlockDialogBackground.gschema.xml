@@ -36,5 +36,11 @@
       <description>
       </description>
     </key>
+    <key name="gap" type="i">
+      <default>0</default>
+      <summary>Gap between windows</summary>
+      <description>
+      </description>
+    </key>
   </schema>
 </schemalist>
