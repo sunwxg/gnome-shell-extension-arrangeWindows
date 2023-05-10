@@ -8,10 +8,11 @@ const SCHEMA_NAME = 'org.gnome.shell.extensions.arrangeWindows';
 const KEY_GAP = 'gap';
 
 function init() {
-    gsettings = ExtensionUtils.getSettings(SCHEMA_NAME);
 }
 
 function buildPrefsWidget() {
+    gsettings = ExtensionUtils.getSettings(SCHEMA_NAME);
+
     let widget = new Gtk.Box({
         orientation: Gtk.Orientation.VERTICAL,
         margin_top: 10,
