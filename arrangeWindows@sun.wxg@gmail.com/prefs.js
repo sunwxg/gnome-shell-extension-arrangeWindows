@@ -2,7 +2,6 @@ const Gtk = imports.gi.Gtk;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
-let gsettings;
 
 const SCHEMA_NAME = 'org.gnome.shell.extensions.arrangeWindows';
 const KEY_GAP = 'gap';
@@ -11,7 +10,7 @@ function init() {
 }
 
 function buildPrefsWidget() {
-    gsettings = ExtensionUtils.getSettings(SCHEMA_NAME);
+    let gsettings = ExtensionUtils.getSettings(SCHEMA_NAME);
 
     let widget = new Gtk.Box({
         orientation: Gtk.Orientation.VERTICAL,
@@ -27,14 +26,14 @@ function buildPrefsWidget() {
     });
     vbox.set_size_request(550, 350);
 
-    vbox.append(addSpinButton("Gap between windows", KEY_GAP));
+    vbox.append(addSpinButton("Gap between windows", KEY_GAP, gsettings));
 
     widget.append(vbox);
 
     return widget;
 }
 
-function addSpinButton(string, key) {
+function addSpinButton(string, key, gsettings) {
         let hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, margin_top: 20});
         let info = new Gtk.Label({xalign: 0, hexpand: true});
         info.set_markup(string);
