@@ -1,16 +1,13 @@
 {
+  "uuid": "arrangeWindows@sun.wxg@gmail.com",
+  "extension-id": "arragne-windows",
+  "settings-schema": "org.gnome.shell.extensions.arrangeWindows",
+  "gettext-domain": "gnome-shell-extensions",
+  "name": "Arrange Windows",
   "description": "Arrange windows on the monitors\n\nHotkeys:\n Ctrl+Alt+1 Cascade windows\n Ctrl+Alt+2 Tiling windows\n Ctrl+Alt+3 Side by side windows\n Ctrl+Alt+4 Stack windows",
-  "name": "Arrange Windows", 
-  "original-authors": "sun.wxg@gmail.com", 
   "shell-version": [
-    "3.36",
-    "3.38",
-    "40",
-    "41",
-    "42",
-    "43",
-    "44"
+    "45"
   ],
-  "url": "https://github.com/sunwxg/gnome-shell-extension-arrangeWindows",
-  "uuid": "arrangeWindows@sun.wxg@gmail.com"
+  "original-authors": "sun.wxg@gmail.com",
+  "url": "https://github.com/sunwxg/gnome-shell-extension-arrangeWindows"
 }

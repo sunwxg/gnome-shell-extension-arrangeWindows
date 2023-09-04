@@ -1,24 +1,19 @@
 // -*- mode: js2; indent-tabs-mode: nil; js2-basic-offset: 4 -*-
 
-const Gio = imports.gi.Gio;
-const Clutter = imports.gi.Clutter;
-const GLib = imports.gi.GLib;
-const St = imports.gi.St;
-const Meta = imports.gi.Meta;
-const Shell = imports.gi.Shell;
-const Mainloop = imports.mainloop;
-const GObject = imports.gi.GObject;
+import Gio from 'gi://Gio';
+import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
+import St from 'gi://St';
 
-const Gettext = imports.gettext.domain('gnome-shell-extensions');
-const _ = Gettext.gettext;
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const Main = imports.ui.main;
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
-const Slider = imports.ui.slider;
-
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import * as Slider from 'resource:///org/gnome/shell/ui/slider.js';
 
 const CASCADE_WIDTH = 30;
 const CASCADE_HEIGHT = 30;
@@ -37,10 +32,12 @@ const COLUMN = ['2', '3', '4', '5', '6', '7', '8'];
 
 let ArrangeMenu = GObject.registerClass(
 class ArrangeMenu extends PanelMenu.Button {
-    _init() {
+    _init(settings, dir) {
         super._init(0.0, _('Arrange Windows'));
 
-        this._gsettings = ExtensionUtils.getSettings(ARRANGEWINDOWS_SCHEMA);
+        //this._gsettings = ExtensionUtils.getSettings(ARRANGEWINDOWS_SCHEMA);
+        this._gsettings = settings;
+        this._dir = dir;
 
         this._allMonitor = this._gsettings.get_boolean(ALL_MONITOR);
 
@@ -86,7 +83,7 @@ class ArrangeMenu extends PanelMenu.Button {
         this._allMonitorItem.connect('toggled', this._allMonitorToggle.bind(this));
         this.menu.addMenuItem(this._allMonitorItem);
 
-        this._column = new Column();
+        this._column = new Column(settings);
         this.menu.addMenuItem(this._column.menu);
 
         this.gap= this._gsettings.get_int(KEY_GAP);
@@ -360,22 +357,22 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 
     _getCustIcon(icon_name) {
-        let gicon = Gio.icon_new_for_string( Me.dir.get_child('icons').get_path() + "/" + icon_name + ".svg" );
+        let gicon = Gio.icon_new_for_string( this._dir.get_child('icons').get_path() + "/" + icon_name + ".svg" );
         return gicon;
     }
 
     _onDestroy(){
         if (this.gapID)
-            this.settings.disconnect(this.gapID);
+            this._gsettings.disconnect(this.gapID);
     }
 });
 
 let Column = GObject.registerClass(
 class Column extends PanelMenu.SystemIndicator {
-    _init() {
+    _init(settings) {
         super._init();
 
-        this._gsettings = ExtensionUtils.getSettings(ARRANGEWINDOWS_SCHEMA);
+        this._gsettings = settings;
 
         this._item = new PopupMenu.PopupBaseMenuItem({ activate: false });
         this.menu.addMenuItem(this._item);
@@ -399,26 +396,26 @@ class Column extends PanelMenu.SystemIndicator {
     }
 });
 
-function addKeybinding() {
+function addKeybinding(arrange, settings) {
     let modeType = Shell.ActionMode.NORMAL;
 
     Main.wm.addKeybinding(HOTKEY_CASCADE,
-                          arrange._gsettings,
+                          settings,
                           Meta.KeyBindingFlags.NONE,
                           modeType,
                           arrange.cascadeWindow.bind(arrange));
     Main.wm.addKeybinding(HOTKEY_TILE,
-                          arrange._gsettings,
+                          settings,
                           Meta.KeyBindingFlags.NONE,
                           modeType,
                           arrange.tileWindow.bind(arrange));
     Main.wm.addKeybinding(HOTKEY_SIDEBYSIDE,
-                          arrange._gsettings,
+                          settings,
                           Meta.KeyBindingFlags.NONE,
                           modeType,
                           arrange.sideBySideWindow.bind(arrange));
     Main.wm.addKeybinding(HOTKEY_STACK,
-                          arrange._gsettings,
+                          settings,
                           Meta.KeyBindingFlags.NONE,
                           modeType,
                           arrange.stackWindow.bind(arrange));
@@ -431,19 +428,19 @@ function removeKeybinding(){
     Main.wm.removeKeybinding(HOTKEY_STACK);
 }
 
-let arrange;
+export default class ArrangeWindowsExtension extends Extension {
 
-function init(metadata) {
-}
+    enable() {
+        this._settings = this.getSettings();
+        this.arrange = new ArrangeMenu(this._settings, this.dir);
+        Main.panel.addToStatusArea('arrange-menu', this.arrange);
+        addKeybinding(this.arrange, this._settings);
+    }
 
-function enable() {
-    arrange = new ArrangeMenu;
-    Main.panel.addToStatusArea('arrange-menu', arrange);
-    addKeybinding();
-}
-
-function disable() {
-    removeKeybinding();
-    arrange.destroy();
-    arrange = null;
+    disable() {
+        removeKeybinding();
+        this.arrange.destroy();
+        this.arrange = null;
+        this._settings = null;
+    }
 }
