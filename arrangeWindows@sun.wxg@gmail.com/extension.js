@@ -364,6 +364,7 @@ class ArrangeMenu extends PanelMenu.Button {
     _onDestroy(){
         if (this.gapID)
             this._gsettings.disconnect(this.gapID);
+            this.gapID = 0;
     }
 });
 
