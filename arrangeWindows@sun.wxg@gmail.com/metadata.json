@@ -6,7 +6,7 @@
   "name": "Arrange Windows",
   "description": "Arrange windows on the monitors\n\nHotkeys:\n Ctrl+Alt+1 Cascade windows\n Ctrl+Alt+2 Tiling windows\n Ctrl+Alt+3 Side by side windows\n Ctrl+Alt+4 Stack windows",
   "shell-version": [
-    "45"
+    "46"
   ],
   "original-authors": "sun.wxg@gmail.com",
   "url": "https://github.com/sunwxg/gnome-shell-extension-arrangeWindows"

@@ -14,6 +14,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Slider from 'resource:///org/gnome/shell/ui/slider.js';
+import {SystemIndicator} from 'resource:///org/gnome/shell/ui/quickSettings.js';
 
 const CASCADE_WIDTH = 30;
 const CASCADE_HEIGHT = 30;
@@ -43,7 +44,7 @@ class ArrangeMenu extends PanelMenu.Button {
 
         let icon = new St.Icon({ gicon: this._getCustIcon('arrange-windows-symbolic'),
                                  style_class: 'system-status-icon' });
-        this.add_actor(icon);
+        this.add_child(icon);
 
         this.menu.addAction(_("Cascade"),
                             () => this.cascadeWindow(),
@@ -84,7 +85,7 @@ class ArrangeMenu extends PanelMenu.Button {
         this.menu.addMenuItem(this._allMonitorItem);
 
         this._column = new Column(settings);
-        this.menu.addMenuItem(this._column.menu);
+        this.menu.addMenuItem(this._column._item);
 
         this.gap= this._gsettings.get_int(KEY_GAP);
         this.gapID = this._gsettings.connect("changed::" + KEY_GAP, () => {
@@ -368,15 +369,15 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 });
 
-let Column = GObject.registerClass(
-class Column extends PanelMenu.SystemIndicator {
+const Column = GObject.registerClass(
+class Column extends SystemIndicator {
     _init(settings) {
         super._init();
 
         this._gsettings = settings;
 
         this._item = new PopupMenu.PopupBaseMenuItem({ activate: false });
-        this.menu.addMenuItem(this._item);
+        this.quickSettingsItems.push(this._item);
 
         this._slider = new Slider.Slider(0);
         this._slider.connect('drag-end', this._sliderChanged.bind(this));
@@ -385,8 +386,8 @@ class Column extends PanelMenu.SystemIndicator {
         this._slider.value = number / 6;
         this._label = new St.Label({ text: 'Tile x' + COLUMN[number] });
 
-        this._item.add(this._label);
-        this._item.add(this._slider);
+        this._item.add_child(this._label);
+        this._item.add_child(this._slider);
     }
 
     _sliderChanged() {
