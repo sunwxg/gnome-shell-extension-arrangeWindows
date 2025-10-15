@@ -42,5 +42,15 @@
       <description>
       </description>
     </key>
+    <key name="show-panel-button" type="b">
+      <default>true</default>
+      <summary>Show panel button</summary>
+      <description>Show or hide the extension button in the panel</description>
+    </key>
+    <key name="enable-shortcuts" type="b">
+      <default>true</default>
+      <summary>Enable keyboard shortcuts</summary>
+      <description>Enable or disable keyboard shortcuts for window arrangements</description>
+    </key>
   </schema>
 </schemalist>
