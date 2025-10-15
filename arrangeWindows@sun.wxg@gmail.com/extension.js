@@ -28,6 +28,8 @@ const HOTKEY_TILE = 'arrangewindow-tile';
 const HOTKEY_SIDEBYSIDE = 'arrangewindow-sidebyside';
 const HOTKEY_STACK = 'arrangewindow-stack';
 const KEY_GAP = 'gap';
+const SHOW_PANEL_BUTTON = 'show-panel-button';
+const ENABLE_SHORTCUTS = 'enable-shortcuts';
 
 const COLUMN = ['2', '3', '4', '5', '6', '7', '8'];
 
@@ -36,11 +38,11 @@ class ArrangeMenu extends PanelMenu.Button {
     _init(settings, dir) {
         super._init(0.0, _('Arrange Windows'));
 
-        //this._gsettings = ExtensionUtils.getSettings(ARRANGEWINDOWS_SCHEMA);
         this._gsettings = settings;
         this._dir = dir;
 
         this._allMonitor = this._gsettings.get_boolean(ALL_MONITOR);
+        this._showPanelButton = this._gsettings.get_boolean(SHOW_PANEL_BUTTON);
 
         let icon = new St.Icon({ gicon: this._getCustIcon('arrange-windows-symbolic'),
                                  style_class: 'system-status-icon' });
@@ -87,10 +89,18 @@ class ArrangeMenu extends PanelMenu.Button {
         this._column = new Column(settings);
         this.menu.addMenuItem(this._column._item);
 
-        this.gap= this._gsettings.get_int(KEY_GAP);
+        this.gap = this._gsettings.get_int(KEY_GAP);
         this.gapID = this._gsettings.connect("changed::" + KEY_GAP, () => {
             this.gap = this._gsettings.get_int(KEY_GAP);
         });
+
+        this.showPanelButtonID = this._gsettings.connect("changed::" + SHOW_PANEL_BUTTON, () => {
+            this._showPanelButton = this._gsettings.get_boolean(SHOW_PANEL_BUTTON);
+            this.visible = this._showPanelButton;
+        });
+
+        // Set initial visibility
+        this.visible = this._showPanelButton;
 
         this.show();
 
@@ -154,32 +164,13 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 
     tileWindow() {
-        /* Display all windows in a grid defined by the number of columns in
-         * settings.
-         *
-         * In the last row, the rectangles may be wider so that the remaining
-         * windows equally share the total width.
-         *
-         * Try to assign the windows to the closest rectangle in the grid so that
-         * windows move by the smallest amount. This is important because they
-         * may be pressing tile from a state that is already tiled so wouldn't expect
-         * the windows to change order.
-         *
-         * A quick heuristic to approximate this is to calculate the closest grid position
-         * for each window and then assign them to the closest available in order
-         * of shortest first.
-         */
-
         let windows = this.getWindows();
         if (windows.length == 0) return;
         let workArea = this.getWorkArea(windows[0]);
 
-        // Get number of columns from settings
         let columnNumber = parseInt(COLUMN[this._gsettings.get_int(COLUMN_NUMBER)]);
-        // Calculate number of rows based on number of windows and number of columns
         let rowNumber = Math.ceil(windows.length / columnNumber);
 
-        // Create the grid
         let gridCells = [];
         for (let i = 0; i < windows.length; i ++) {
             let row = Math.floor(i / columnNumber);
@@ -192,7 +183,6 @@ class ArrangeMenu extends PanelMenu.Button {
             let cell = {};
 
             if (row + 1 === rowNumber && numLastRow !== 0) {
-                // In the last row, recalculate width so that they fill the screen
                 let gridWidthLastRow = Math.floor(workArea.width / numLastRow);
                 cell.x = workArea.x + col * gridWidthLastRow;
                 cell.w = gridWidthLastRow;
@@ -207,8 +197,6 @@ class ArrangeMenu extends PanelMenu.Button {
             gridCells.push(cell);
         }
 
-        // Calculate distances[i][j] as the distance from windows[i] to
-        // gridCells[j].
         let distances = [];
         for (let windowI = 0; windowI < windows.length; windowI ++) {
             const win = windows[windowI];
@@ -223,7 +211,6 @@ class ArrangeMenu extends PanelMenu.Button {
             }
         }
 
-        // Move window into cell
         function moveWindow(wind, cell, gap) {
             const win = wind.get_meta_window();
             win.unmaximize(Meta.MaximizeFlags.BOTH);
@@ -231,11 +218,9 @@ class ArrangeMenu extends PanelMenu.Button {
             win.move_resize_frame(false, cell.x + gap, cell.y + gap, cell.w - (2 * gap), cell.h - (2 * gap));
         }
 
-        // Now we can assign windows in order of closest
         const windowIsToMove = new Set(windows.keys());
         const cellJsToFill = new Set(gridCells.keys());
 
-        // Move windows, closest to grid position first.
         for (let i = 0; i < windows.length; i ++) {
             if (windowIsToMove.size !== cellJsToFill.size)
                 throw Error('Expected to assign one cell per window');
@@ -363,9 +348,14 @@ class ArrangeMenu extends PanelMenu.Button {
     }
 
     _onDestroy(){
-        if (this.gapID)
+        if (this.gapID) {
             this._gsettings.disconnect(this.gapID);
             this.gapID = 0;
+        }
+        if (this.showPanelButtonID) {
+            this._gsettings.disconnect(this.showPanelButtonID);
+            this.showPanelButtonID = 0;
+        }
     }
 });
 
@@ -401,26 +391,43 @@ class Column extends SystemIndicator {
 function addKeybinding(arrange, settings) {
     let modeType = Shell.ActionMode.NORMAL;
 
-    Main.wm.addKeybinding(HOTKEY_CASCADE,
-                          settings,
-                          Meta.KeyBindingFlags.NONE,
-                          modeType,
-                          arrange.cascadeWindow.bind(arrange));
-    Main.wm.addKeybinding(HOTKEY_TILE,
-                          settings,
-                          Meta.KeyBindingFlags.NONE,
-                          modeType,
-                          arrange.tileWindow.bind(arrange));
-    Main.wm.addKeybinding(HOTKEY_SIDEBYSIDE,
-                          settings,
-                          Meta.KeyBindingFlags.NONE,
-                          modeType,
-                          arrange.sideBySideWindow.bind(arrange));
-    Main.wm.addKeybinding(HOTKEY_STACK,
-                          settings,
-                          Meta.KeyBindingFlags.NONE,
-                          modeType,
-                          arrange.stackWindow.bind(arrange));
+    // Получаем текущие комбинации из настроек
+    let cascadeKeys = settings.get_strv(HOTKEY_CASCADE);
+    let tileKeys = settings.get_strv(HOTKEY_TILE);
+    let sidebysideKeys = settings.get_strv(HOTKEY_SIDEBYSIDE);
+    let stackKeys = settings.get_strv(HOTKEY_STACK);
+
+    if (cascadeKeys && cascadeKeys.length > 0) {
+        Main.wm.addKeybinding(HOTKEY_CASCADE,
+                              settings,
+                              Meta.KeyBindingFlags.NONE,
+                              modeType,
+                              arrange.cascadeWindow.bind(arrange));
+    }
+
+    if (tileKeys && tileKeys.length > 0) {
+        Main.wm.addKeybinding(HOTKEY_TILE,
+                              settings,
+                              Meta.KeyBindingFlags.NONE,
+                              modeType,
+                              arrange.tileWindow.bind(arrange));
+    }
+
+    if (sidebysideKeys && sidebysideKeys.length > 0) {
+        Main.wm.addKeybinding(HOTKEY_SIDEBYSIDE,
+                              settings,
+                              Meta.KeyBindingFlags.NONE,
+                              modeType,
+                              arrange.sideBySideWindow.bind(arrange));
+    }
+
+    if (stackKeys && stackKeys.length > 0) {
+        Main.wm.addKeybinding(HOTKEY_STACK,
+                              settings,
+                              Meta.KeyBindingFlags.NONE,
+                              modeType,
+                              arrange.stackWindow.bind(arrange));
+    }
 }
 
 function removeKeybinding(){
@@ -434,15 +441,51 @@ export default class ArrangeWindowsExtension extends Extension {
 
     enable() {
         this._settings = this.getSettings();
+        
+        // Create the menu - всегда создаем, но управляем видимостью через настройки
         this.arrange = new ArrangeMenu(this._settings, this.dir);
+        
+        // Always add to panel - visibility is controlled by the ArrangeMenu itself
         Main.panel.addToStatusArea('arrange-menu', this.arrange);
-        addKeybinding(this.arrange, this._settings);
+        
+        // Add keyboard shortcuts if enabled
+        if (this._settings.get_boolean(ENABLE_SHORTCUTS)) {
+            addKeybinding(this.arrange, this._settings);
+        }
+        
+        // Track shortcuts enable/disable changes
+        this._enableShortcutsId = this._settings.connect(`changed::${ENABLE_SHORTCUTS}`, 
+            this._onEnableShortcutsChanged.bind(this));
     }
 
     disable() {
+        // Remove keyboard shortcuts
         removeKeybinding();
-        this.arrange.destroy();
-        this.arrange = null;
+        
+        // Disconnect settings signals
+        if (this._enableShortcutsId) {
+            this._settings.disconnect(this._enableShortcutsId);
+            this._enableShortcutsId = null;
+        }
+        
+        // Destroy the menu
+        if (this.arrange) {
+            this.arrange.destroy();
+            this.arrange = null;
+        }
+        
         this._settings = null;
+    }
+
+    _onEnableShortcutsChanged() {
+        const enableShortcuts = this._settings.get_boolean(ENABLE_SHORTCUTS);
+        
+        if (enableShortcuts) {
+            // Add keyboard shortcuts
+            addKeybinding(this.arrange, this._settings);
+        } else {
+            // Remove keyboard shortcuts
+            removeKeybinding();
+        }
     }
 }
