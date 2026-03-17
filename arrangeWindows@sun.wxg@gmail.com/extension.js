@@ -110,7 +110,7 @@ class ArrangeMenu extends PanelMenu.Button {
         let height = workArea.height * 0.7;
         for (let i = 0; i < windows.length; i++) {
             let win = windows[i].get_meta_window();
-            win.unmaximize(Meta.MaximizeFlags.BOTH);
+            win.unmaximize();
             win.move_resize_frame(false, x, y, width, height);
             x = x + CASCADE_WIDTH;
             y = y + CASCADE_HEIGHT;
@@ -129,7 +129,7 @@ class ArrangeMenu extends PanelMenu.Button {
         let x = workArea.x;
         for (let i = 0; i < windows.length; i++) {
             let win = windows[i].get_meta_window();
-            win.unmaximize(Meta.MaximizeFlags.BOTH);
+            win.unmaximize();
             win.move_resize_frame(false, x + this.gap, y + this.gap, width - (2 * this.gap), workArea.height - (2 * this.gap));
             x = x + width;
         }
@@ -147,7 +147,7 @@ class ArrangeMenu extends PanelMenu.Button {
         let x = workArea.x;
         for (let i = 0; i < windows.length; i++) {
             let win = windows[i].get_meta_window();
-            win.unmaximize(Meta.MaximizeFlags.BOTH);
+            win.unmaximize();
             win.move_resize_frame(false, x + this.gap, y + this.gap, workArea.width - (2 * this.gap), height - (2 * this.gap));
             y += height;
         }
@@ -226,7 +226,7 @@ class ArrangeMenu extends PanelMenu.Button {
         // Move window into cell
         function moveWindow(wind, cell, gap) {
             const win = wind.get_meta_window();
-            win.unmaximize(Meta.MaximizeFlags.BOTH);
+            win.unmaximize();
             win.unminimize();
             win.move_resize_frame(false, cell.x + gap, cell.y + gap, cell.w - (2 * gap), cell.h - (2 * gap));
         }
@@ -268,7 +268,7 @@ class ArrangeMenu extends PanelMenu.Button {
         for (let i = 0; i < windows.length; i++) {
             let actor = windows[i];
             let win = actor.get_meta_window();
-            win.maximize(direction);
+            win.maximize();
         }
     }
 
@@ -314,7 +314,7 @@ class ArrangeMenu extends PanelMenu.Button {
         for (let i = 0; i < windows.length; i++) {
             let actor = windows[i];
             let win = actor.get_meta_window();
-            win.unmaximize(Meta.MaximizeFlags.BOTH);
+            win.unmaximize();
         }
     }
 
