@@ -197,15 +197,60 @@ class ArrangeMenu extends PanelMenu.Button {
 
         this.moveWindowToRect(masterWindow, masterX, workArea.y, masterWidth, workArea.height);
 
-        // stack other windows
+        // Build side-stack rectangles first, stacked vertically
+        let sideCells = [];
         let sideHeight = Math.round(workArea.height / otherWindows.length);
         let y = workArea.y;
         for (let i = 0; i < otherWindows.length; i++) {
             let height = i + 1 == otherWindows.length
                 ? workArea.y + workArea.height - y
                 : sideHeight;
-            this.moveWindowToRect(otherWindows[i], sideX, y, sideWidth, height);
+            sideCells.push({ x: sideX, y: y, w: sideWidth, h: height });
             y += height;
+        }
+
+        // Assign other windows to side rectangles using closest-center heuristic
+        let distances = [];
+        for (let windowI = 0; windowI < otherWindows.length; windowI++) {
+            const win = otherWindows[windowI];
+            const windowCenterX = win.x + win.width / 2;
+            const windowCenterY = win.y + win.height / 2;
+            distances[windowI] = [];
+            for (let cellJ = 0; cellJ < sideCells.length; cellJ++) {
+                const cell = sideCells[cellJ];
+                const dist = Math.sqrt((windowCenterX - (cell.x + cell.w / 2)) ** 2 +
+                    (windowCenterY - (cell.y + cell.h / 2)) ** 2);
+                distances[windowI][cellJ] = dist;
+            }
+        }
+
+        const windowIsToMove = new Set(otherWindows.keys());
+        const cellJsToFill = new Set(sideCells.keys());
+
+        for (let i = 0; i < otherWindows.length; i++) {
+            if (windowIsToMove.size !== cellJsToFill.size)
+                throw Error('Expected to assign one cell per window');
+            let minDist = Infinity;
+            let minI, minJ;
+            windowIsToMove.forEach(windowI =>
+                cellJsToFill.forEach(cellJ => {
+                        if (distances[windowI][cellJ] < minDist) {
+                            minDist = distances[windowI][cellJ];
+                            minI = windowI;
+                            minJ = cellJ;
+                        }
+                    }
+                )
+            );
+            this.moveWindowToRect(
+                otherWindows[minI],
+                sideCells[minJ].x,
+                sideCells[minJ].y,
+                sideCells[minJ].w,
+                sideCells[minJ].h
+            );
+            windowIsToMove.delete(minI);
+            cellJsToFill.delete(minJ);
         }
     }
 
