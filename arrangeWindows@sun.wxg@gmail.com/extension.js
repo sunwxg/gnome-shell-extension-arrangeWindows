@@ -138,9 +138,7 @@ class ArrangeMenu extends PanelMenu.Button {
         let y = workArea.y;
         let x = workArea.x;
         for (let i = 0; i < windows.length; i++) {
-            let win = windows[i].get_meta_window();
-            win.unmaximize();
-            win.move_resize_frame(false, x + this.gap, y + this.gap, width - (2 * this.gap), workArea.height - (2 * this.gap));
+            this.moveWindowToRect(windows[i], x, y, width, workArea.height);
             x = x + width;
         }
     }
@@ -156,9 +154,7 @@ class ArrangeMenu extends PanelMenu.Button {
         let y = workArea.y;
         let x = workArea.x;
         for (let i = 0; i < windows.length; i++) {
-            let win = windows[i].get_meta_window();
-            win.unmaximize();
-            win.move_resize_frame(false, x + this.gap, y + this.gap, workArea.width - (2 * this.gap), height - (2 * this.gap));
+            this.moveWindowToRect(windows[i], x, y, workArea.width, height);
             y += height;
         }
     }
@@ -213,7 +209,13 @@ class ArrangeMenu extends PanelMenu.Button {
         let win = actor.get_meta_window();
         win.unmaximize();
         win.unminimize();
-        win.move_resize_frame(false, x + this.gap, y + this.gap, width - (2 * this.gap), height - (2 * this.gap));
+        win.move_resize_frame(
+            false,
+            x + this.gap,
+            y + this.gap,
+            width - (2 * this.gap),
+            height - (2 * this.gap)
+        );
     }
 
     tileWindow() {
@@ -286,14 +288,6 @@ class ArrangeMenu extends PanelMenu.Button {
             }
         }
 
-        // Move window into cell
-        function moveWindow(wind, cell, gap) {
-            const win = wind.get_meta_window();
-            win.unmaximize();
-            win.unminimize();
-            win.move_resize_frame(false, cell.x + gap, cell.y + gap, cell.w - (2 * gap), cell.h - (2 * gap));
-        }
-
         // Now we can assign windows in order of closest
         const windowIsToMove = new Set(windows.keys());
         const cellJsToFill = new Set(gridCells.keys());
@@ -314,7 +308,13 @@ class ArrangeMenu extends PanelMenu.Button {
                     }
                 )
             );
-            moveWindow(windows[minI], gridCells[minJ], this.gap);
+            this.moveWindowToRect(
+                windows[minI],
+                gridCells[minJ].x,
+                gridCells[minJ].y,
+                gridCells[minJ].w,
+                gridCells[minJ].h
+            );
             windowIsToMove.delete(minI);
             cellJsToFill.delete(minJ);
         }
