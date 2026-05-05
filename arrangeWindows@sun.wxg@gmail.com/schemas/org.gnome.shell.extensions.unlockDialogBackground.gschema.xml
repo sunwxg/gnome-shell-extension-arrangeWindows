@@ -36,6 +36,18 @@
       <description>
       </description>
     </key>
+    <key name="arrangewindow-masterleft" type="as">
+      <default><![CDATA[['<Control><Alt>5']]]></default>
+      <summary>Key to master left</summary>
+      <description>
+      </description>
+    </key>
+    <key name="arrangewindow-masterright" type="as">
+      <default><![CDATA[['<Control><Alt>6']]]></default>
+      <summary>Key to master right</summary>
+      <description>
+      </description>
+    </key>
     <key name="gap" type="i">
       <default>0</default>
       <summary>Gap between windows</summary>

@@ -27,6 +27,8 @@ const HOTKEY_CASCADE = 'arrangewindow-cascade';
 const HOTKEY_TILE = 'arrangewindow-tile';
 const HOTKEY_SIDEBYSIDE = 'arrangewindow-sidebyside';
 const HOTKEY_STACK = 'arrangewindow-stack';
+const HOTKEY_MASTERLEFT = 'arrangewindow-masterleft';
+const HOTKEY_MASTERRIGHT = 'arrangewindow-masterright';
 const KEY_GAP = 'gap';
 
 const COLUMN = ['2', '3', '4', '5', '6', '7', '8'];
@@ -61,6 +63,14 @@ class ArrangeMenu extends PanelMenu.Button {
         this.menu.addAction(_("Stack"),
                             () => this.stackWindow(),
                             this._getCustIcon('stack-windows-symbolic'));
+
+        this.menu.addAction(_("Master left"),
+                            () => this.masterLeftWindow(),
+                            this._getCustIcon('master-left-windows-symbolic'));
+
+        this.menu.addAction(_("Master right"),
+                            () => this.masterRightWindow(),
+                            this._getCustIcon('master-right-windows-symbolic'));
 
         this.menu.addAction(_("Maximize"),
                             () => this.maximizeWindow(Meta.MaximizeFlags.BOTH),
@@ -151,6 +161,59 @@ class ArrangeMenu extends PanelMenu.Button {
             win.move_resize_frame(false, x + this.gap, y + this.gap, workArea.width - (2 * this.gap), height - (2 * this.gap));
             y += height;
         }
+    }
+
+    masterLeftWindow() {
+        this.masterStackWindow(false);
+    }
+
+    masterRightWindow() {
+        this.masterStackWindow(true);
+    }
+
+    masterStackWindow(masterRight) {
+        let windows = this.getWindows();
+        if (windows.length == 0)
+            return;
+
+        let workArea = this.getWorkArea(windows[0]);
+        let focusedWindow = global.display.get_focus_window();
+        let masterWindowIndex = windows.findIndex(actor => actor.get_meta_window() == focusedWindow);
+        if (masterWindowIndex < 0)
+            masterWindowIndex = 0;
+
+        let masterWindow = windows[masterWindowIndex];
+        let otherWindows = windows.filter((_, index) => index != masterWindowIndex);
+        if (otherWindows.length == 0) {
+            // fullscreen the only window
+            this.moveWindowToRect(masterWindow, workArea.x, workArea.y, workArea.width, workArea.height);
+            return;
+        }
+
+        let masterWidth = Math.round(workArea.width / 2);
+        let sideWidth = workArea.width - masterWidth;
+        let masterX = masterRight ? workArea.x + sideWidth : workArea.x;
+        let sideX = masterRight ? workArea.x : workArea.x + masterWidth;
+
+        this.moveWindowToRect(masterWindow, masterX, workArea.y, masterWidth, workArea.height);
+
+        // stack other windows
+        let sideHeight = Math.round(workArea.height / otherWindows.length);
+        let y = workArea.y;
+        for (let i = 0; i < otherWindows.length; i++) {
+            let height = i + 1 == otherWindows.length
+                ? workArea.y + workArea.height - y
+                : sideHeight;
+            this.moveWindowToRect(otherWindows[i], sideX, y, sideWidth, height);
+            y += height;
+        }
+    }
+
+    moveWindowToRect(actor, x, y, width, height) {
+        let win = actor.get_meta_window();
+        win.unmaximize();
+        win.unminimize();
+        win.move_resize_frame(false, x + this.gap, y + this.gap, width - (2 * this.gap), height - (2 * this.gap));
     }
 
     tileWindow() {
@@ -421,6 +484,16 @@ function addKeybinding(arrange, settings) {
                           Meta.KeyBindingFlags.NONE,
                           modeType,
                           arrange.stackWindow.bind(arrange));
+    Main.wm.addKeybinding(HOTKEY_MASTERLEFT,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          arrange.masterLeftWindow.bind(arrange));
+    Main.wm.addKeybinding(HOTKEY_MASTERRIGHT,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          arrange.masterRightWindow.bind(arrange));
 }
 
 function removeKeybinding(){
@@ -428,6 +501,8 @@ function removeKeybinding(){
     Main.wm.removeKeybinding(HOTKEY_TILE);
     Main.wm.removeKeybinding(HOTKEY_SIDEBYSIDE);
     Main.wm.removeKeybinding(HOTKEY_STACK);
+    Main.wm.removeKeybinding(HOTKEY_MASTERLEFT);
+    Main.wm.removeKeybinding(HOTKEY_MASTERRIGHT);
 }
 
 export default class ArrangeWindowsExtension extends Extension {

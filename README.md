@@ -8,6 +8,8 @@ Arrange windows on the monitor.
 * `Ctrl+Alt+2` Tiling windows
 * `Ctrl+Alt+3` Side by side windows
 * `Ctrl+Alt+4` Stack windows
+* `Ctrl+Alt+5` Master Left
+* `Ctrl+Alt+6` Master Right
 
 ## Install
 
