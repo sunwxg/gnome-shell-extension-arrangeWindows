@@ -29,6 +29,10 @@ const HOTKEY_SIDEBYSIDE = 'arrangewindow-sidebyside';
 const HOTKEY_STACK = 'arrangewindow-stack';
 const HOTKEY_MASTERLEFT = 'arrangewindow-masterleft';
 const HOTKEY_MASTERRIGHT = 'arrangewindow-masterright';
+const HOTKEY_MAXIMIZE = 'arrangewindow-maximize';
+const HOTKEY_MAXIMIZE_VERTICAL = 'arrangewindow-maximizevertical';
+const HOTKEY_MAXIMIZE_HORIZONTAL = 'arrangewindow-maximizehorizontal';
+const HOTKEY_RESTORING = 'arrangewindow-restoring';
 const KEY_GAP = 'gap';
 
 const COLUMN = ['2', '3', '4', '5', '6', '7', '8'];
@@ -494,6 +498,26 @@ function addKeybinding(arrange, settings) {
                           Meta.KeyBindingFlags.NONE,
                           modeType,
                           arrange.masterRightWindow.bind(arrange));
+    Main.wm.addKeybinding(HOTKEY_MAXIMIZE,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          () => arrange.maximizeWindow(Meta.MaximizeFlags.BOTH));
+    Main.wm.addKeybinding(HOTKEY_MAXIMIZE_VERTICAL,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          () => arrange.maximizeWindow(Meta.MaximizeFlags.VERTICAL));
+    Main.wm.addKeybinding(HOTKEY_MAXIMIZE_HORIZONTAL,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          () => arrange.maximizeWindow(Meta.MaximizeFlags.HORIZONTAL));
+    Main.wm.addKeybinding(HOTKEY_RESTORING,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          arrange.restoringWindow.bind(arrange));
 }
 
 function removeKeybinding(){
@@ -503,6 +527,10 @@ function removeKeybinding(){
     Main.wm.removeKeybinding(HOTKEY_STACK);
     Main.wm.removeKeybinding(HOTKEY_MASTERLEFT);
     Main.wm.removeKeybinding(HOTKEY_MASTERRIGHT);
+    Main.wm.removeKeybinding(HOTKEY_MAXIMIZE);
+    Main.wm.removeKeybinding(HOTKEY_MAXIMIZE_VERTICAL);
+    Main.wm.removeKeybinding(HOTKEY_MAXIMIZE_HORIZONTAL);
+    Main.wm.removeKeybinding(HOTKEY_RESTORING);
 }
 
 export default class ArrangeWindowsExtension extends Extension {
