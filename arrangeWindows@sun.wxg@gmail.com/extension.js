@@ -27,6 +27,12 @@ const HOTKEY_CASCADE = 'arrangewindow-cascade';
 const HOTKEY_TILE = 'arrangewindow-tile';
 const HOTKEY_SIDEBYSIDE = 'arrangewindow-sidebyside';
 const HOTKEY_STACK = 'arrangewindow-stack';
+const HOTKEY_MASTERLEFT = 'arrangewindow-masterleft';
+const HOTKEY_MASTERRIGHT = 'arrangewindow-masterright';
+const HOTKEY_MAXIMIZE = 'arrangewindow-maximize';
+const HOTKEY_MAXIMIZE_VERTICAL = 'arrangewindow-maximizevertical';
+const HOTKEY_MAXIMIZE_HORIZONTAL = 'arrangewindow-maximizehorizontal';
+const HOTKEY_RESTORING = 'arrangewindow-restoring';
 const KEY_GAP = 'gap';
 
 const COLUMN = ['2', '3', '4', '5', '6', '7', '8'];
@@ -61,6 +67,14 @@ class ArrangeMenu extends PanelMenu.Button {
         this.menu.addAction(_("Stack"),
                             () => this.stackWindow(),
                             this._getCustIcon('stack-windows-symbolic'));
+
+        this.menu.addAction(_("Master left"),
+                            () => this.masterLeftWindow(),
+                            this._getCustIcon('master-left-windows-symbolic'));
+
+        this.menu.addAction(_("Master right"),
+                            () => this.masterRightWindow(),
+                            this._getCustIcon('master-right-windows-symbolic'));
 
         this.menu.addAction(_("Maximize"),
                             () => this.maximizeWindow(Meta.MaximizeFlags.BOTH),
@@ -128,9 +142,7 @@ class ArrangeMenu extends PanelMenu.Button {
         let y = workArea.y;
         let x = workArea.x;
         for (let i = 0; i < windows.length; i++) {
-            let win = windows[i].get_meta_window();
-            win.unmaximize();
-            win.move_resize_frame(false, x + this.gap, y + this.gap, width - (2 * this.gap), workArea.height - (2 * this.gap));
+            this.moveWindowToRect(windows[i], x, y, width, workArea.height);
             x = x + width;
         }
     }
@@ -146,11 +158,113 @@ class ArrangeMenu extends PanelMenu.Button {
         let y = workArea.y;
         let x = workArea.x;
         for (let i = 0; i < windows.length; i++) {
-            let win = windows[i].get_meta_window();
-            win.unmaximize();
-            win.move_resize_frame(false, x + this.gap, y + this.gap, workArea.width - (2 * this.gap), height - (2 * this.gap));
+            this.moveWindowToRect(windows[i], x, y, workArea.width, height);
             y += height;
         }
+    }
+
+    masterLeftWindow() {
+        this.masterStackWindow(false);
+    }
+
+    masterRightWindow() {
+        this.masterStackWindow(true);
+    }
+
+    masterStackWindow(masterRight) {
+        let windows = this.getWindows();
+        if (windows.length == 0)
+            return;
+
+        let workArea = this.getWorkArea(windows[0]);
+        let focusedWindow = global.display.get_focus_window();
+        let masterWindowIndex = windows.findIndex(actor => actor.get_meta_window() == focusedWindow);
+        if (masterWindowIndex < 0)
+            masterWindowIndex = 0;
+
+        let masterWindow = windows[masterWindowIndex];
+        let otherWindows = windows.filter((_, index) => index != masterWindowIndex);
+        if (otherWindows.length == 0) {
+            // fullscreen the only window
+            this.moveWindowToRect(masterWindow, workArea.x, workArea.y, workArea.width, workArea.height);
+            return;
+        }
+
+        let masterWidth = Math.round(workArea.width / 2);
+        let sideWidth = workArea.width - masterWidth;
+        let masterX = masterRight ? workArea.x + sideWidth : workArea.x;
+        let sideX = masterRight ? workArea.x : workArea.x + masterWidth;
+
+        this.moveWindowToRect(masterWindow, masterX, workArea.y, masterWidth, workArea.height);
+
+        // Build side-stack rectangles first, stacked vertically
+        let sideCells = [];
+        let sideHeight = Math.round(workArea.height / otherWindows.length);
+        let y = workArea.y;
+        for (let i = 0; i < otherWindows.length; i++) {
+            let height = i + 1 == otherWindows.length
+                ? workArea.y + workArea.height - y
+                : sideHeight;
+            sideCells.push({ x: sideX, y: y, w: sideWidth, h: height });
+            y += height;
+        }
+
+        // Assign other windows to side rectangles using closest-center heuristic
+        let distances = [];
+        for (let windowI = 0; windowI < otherWindows.length; windowI++) {
+            const win = otherWindows[windowI];
+            const windowCenterX = win.x + win.width / 2;
+            const windowCenterY = win.y + win.height / 2;
+            distances[windowI] = [];
+            for (let cellJ = 0; cellJ < sideCells.length; cellJ++) {
+                const cell = sideCells[cellJ];
+                const dist = Math.sqrt((windowCenterX - (cell.x + cell.w / 2)) ** 2 +
+                    (windowCenterY - (cell.y + cell.h / 2)) ** 2);
+                distances[windowI][cellJ] = dist;
+            }
+        }
+
+        const windowIsToMove = new Set(otherWindows.keys());
+        const cellJsToFill = new Set(sideCells.keys());
+
+        for (let i = 0; i < otherWindows.length; i++) {
+            if (windowIsToMove.size !== cellJsToFill.size)
+                throw Error('Expected to assign one cell per window');
+            let minDist = Infinity;
+            let minI, minJ;
+            windowIsToMove.forEach(windowI =>
+                cellJsToFill.forEach(cellJ => {
+                        if (distances[windowI][cellJ] < minDist) {
+                            minDist = distances[windowI][cellJ];
+                            minI = windowI;
+                            minJ = cellJ;
+                        }
+                    }
+                )
+            );
+            this.moveWindowToRect(
+                otherWindows[minI],
+                sideCells[minJ].x,
+                sideCells[minJ].y,
+                sideCells[minJ].w,
+                sideCells[minJ].h
+            );
+            windowIsToMove.delete(minI);
+            cellJsToFill.delete(minJ);
+        }
+    }
+
+    moveWindowToRect(actor, x, y, width, height) {
+        let win = actor.get_meta_window();
+        win.unmaximize();
+        win.unminimize();
+        win.move_resize_frame(
+            false,
+            x + this.gap,
+            y + this.gap,
+            width - (2 * this.gap),
+            height - (2 * this.gap)
+        );
     }
 
     tileWindow() {
@@ -223,14 +337,6 @@ class ArrangeMenu extends PanelMenu.Button {
             }
         }
 
-        // Move window into cell
-        function moveWindow(wind, cell, gap) {
-            const win = wind.get_meta_window();
-            win.unmaximize();
-            win.unminimize();
-            win.move_resize_frame(false, cell.x + gap, cell.y + gap, cell.w - (2 * gap), cell.h - (2 * gap));
-        }
-
         // Now we can assign windows in order of closest
         const windowIsToMove = new Set(windows.keys());
         const cellJsToFill = new Set(gridCells.keys());
@@ -251,7 +357,13 @@ class ArrangeMenu extends PanelMenu.Button {
                     }
                 )
             );
-            moveWindow(windows[minI], gridCells[minJ], this.gap);
+            this.moveWindowToRect(
+                windows[minI],
+                gridCells[minJ].x,
+                gridCells[minJ].y,
+                gridCells[minJ].w,
+                gridCells[minJ].h
+            );
             windowIsToMove.delete(minI);
             cellJsToFill.delete(minJ);
         }
@@ -421,6 +533,36 @@ function addKeybinding(arrange, settings) {
                           Meta.KeyBindingFlags.NONE,
                           modeType,
                           arrange.stackWindow.bind(arrange));
+    Main.wm.addKeybinding(HOTKEY_MASTERLEFT,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          arrange.masterLeftWindow.bind(arrange));
+    Main.wm.addKeybinding(HOTKEY_MASTERRIGHT,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          arrange.masterRightWindow.bind(arrange));
+    Main.wm.addKeybinding(HOTKEY_MAXIMIZE,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          () => arrange.maximizeWindow(Meta.MaximizeFlags.BOTH));
+    Main.wm.addKeybinding(HOTKEY_MAXIMIZE_VERTICAL,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          () => arrange.maximizeWindow(Meta.MaximizeFlags.VERTICAL));
+    Main.wm.addKeybinding(HOTKEY_MAXIMIZE_HORIZONTAL,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          () => arrange.maximizeWindow(Meta.MaximizeFlags.HORIZONTAL));
+    Main.wm.addKeybinding(HOTKEY_RESTORING,
+                          settings,
+                          Meta.KeyBindingFlags.NONE,
+                          modeType,
+                          arrange.restoringWindow.bind(arrange));
 }
 
 function removeKeybinding(){
@@ -428,6 +570,12 @@ function removeKeybinding(){
     Main.wm.removeKeybinding(HOTKEY_TILE);
     Main.wm.removeKeybinding(HOTKEY_SIDEBYSIDE);
     Main.wm.removeKeybinding(HOTKEY_STACK);
+    Main.wm.removeKeybinding(HOTKEY_MASTERLEFT);
+    Main.wm.removeKeybinding(HOTKEY_MASTERRIGHT);
+    Main.wm.removeKeybinding(HOTKEY_MAXIMIZE);
+    Main.wm.removeKeybinding(HOTKEY_MAXIMIZE_VERTICAL);
+    Main.wm.removeKeybinding(HOTKEY_MAXIMIZE_HORIZONTAL);
+    Main.wm.removeKeybinding(HOTKEY_RESTORING);
 }
 
 export default class ArrangeWindowsExtension extends Extension {
