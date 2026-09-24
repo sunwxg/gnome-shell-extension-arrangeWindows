@@ -1,7 +1,6 @@
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk';
 import Gio from 'gi://Gio';
-import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -38,70 +37,43 @@ const MIN_LETTER_KEYVAL = Gdk.KEY_a;
 const MAX_LETTER_KEYVAL = Gdk.KEY_z;
 const CAPTURE_TEXT = 'recording shortcut';
 
-function buildPrefsWidget(settings) {
-    let gsettings = settings;
+function buildPrefsPage(settings) {
+    let page = new Adw.PreferencesPage();
 
-    let widget = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        margin_top: 10,
-        margin_bottom: 10,
-        margin_start: 10,
-        margin_end: 10,
+    let generalGroup = new Adw.PreferencesGroup({
+        title: 'General',
     });
 
-    let vbox = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        margin_top: 10
+    let gapRow = new Adw.SpinRow({
+        title: 'Gap Between Windows',
+        adjustment: new Gtk.Adjustment({
+            lower: 0,
+            upper: 1000,
+            step_increment: 1,
+            page_increment: 1,
+        }),
     });
-    vbox.set_size_request(550, 350);
+    settings.bind(KEY_GAP, gapRow, 'value', Gio.SettingsBindFlags.DEFAULT);
+    generalGroup.add(gapRow);
 
-    vbox.append(addSpinButton("Gap Between Windows", KEY_GAP, gsettings));
-    vbox.append(addSectionLabel('Keyboard Shortcuts'));
+    page.add(generalGroup);
+
+    let shortcutGroup = new Adw.PreferencesGroup({
+        title: 'Keyboard Shortcuts',
+    });
 
     for (let [label, key] of SHORTCUTS)
-        vbox.append(addShortcutRow(label, key, gsettings));
+        shortcutGroup.add(createShortcutRow(label, key, settings));
 
-    widget.append(vbox);
+    page.add(shortcutGroup);
 
-    return widget;
+    return page;
 }
 
-function addSpinButton(string, key, gsettings) {
-        let hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, margin_top: 20});
-        let info = new Gtk.Label({xalign: 0, hexpand: true});
-        info.set_markup(string);
-        hbox.append(info);
-
-        let button = new Gtk.SpinButton();
-        button.set_range(0, 1000);
-        button.set_increments(1, 1);
-        button.set_value(gsettings.get_int(key));
-        button.connect('value_changed', (button) => { gsettings.set_int(key, button.get_value_as_int()); });
-        hbox.append(button);
-        return hbox;
-    }
-
-function addSectionLabel(string) {
-    let label = new Gtk.Label({
-        xalign: 0,
-        margin_top: 28,
-        margin_bottom: 6,
+function createShortcutRow(string, key, gsettings) {
+    let row = new Adw.ActionRow({
+        title: string,
     });
-    label.set_markup(`<b>${string}</b>`);
-
-    return label;
-}
-
-function addShortcutRow(string, key, gsettings) {
-    let hbox = new Gtk.Box({
-        orientation: Gtk.Orientation.HORIZONTAL,
-        margin_top: 10,
-        spacing: 8,
-    });
-
-    let info = new Gtk.Label({xalign: 0, hexpand: true});
-    info.set_markup(string);
-    hbox.append(info);
 
     let button = new Gtk.Button({
         width_request: 170,
@@ -115,14 +87,14 @@ function addShortcutRow(string, key, gsettings) {
     stack.add_named(shortcutLabel, 'shortcut');
     stack.add_named(captureLabel, 'capture');
     button.set_child(stack);
-    hbox.append(button);
+    row.add_suffix(button);
 
     let resetButton = new Gtk.Button({
         icon_name: 'edit-undo-symbolic',
         tooltip_text: 'Reset to default shortcut',
         valign: Gtk.Align.CENTER,
     });
-    hbox.append(resetButton);
+    row.add_suffix(resetButton);
 
     let capturing = false;
 
@@ -206,11 +178,12 @@ function addShortcutRow(string, key, gsettings) {
     gsettings.connect(`changed::${key}`, update);
 
     update();
-    return hbox;
+    return row;
 }
 
 export default class ArrangeWindowsPrefs extends ExtensionPreferences {
-    getPreferencesWidget() {
-        return buildPrefsWidget(this.getSettings());
+    fillPreferencesWindow(window) {
+        window.search_enabled = true;
+        window.add(buildPrefsPage(this.getSettings()));
     }
 }
